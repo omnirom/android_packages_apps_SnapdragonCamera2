@@ -35,6 +35,7 @@ public class CameraApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        mApp = this;
         ActivityManager actManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
         actManager.getMemoryInfo(memInfo);
@@ -51,8 +52,7 @@ public class CameraApp extends Application {
         SDCard.initialize(this);
     }
 
-    public static Context getContext()
-    {
+    public static Context getContext() {
         return mApp.getApplicationContext();
     }
 }

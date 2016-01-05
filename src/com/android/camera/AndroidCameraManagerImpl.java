@@ -17,14 +17,17 @@
 package com.android.camera;
 
 import static com.android.camera.util.CameraUtil.Assert;
+import com.android.camera.app.CameraApp;
 
 import java.io.IOException;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.AutoFocusMoveCallback;
+import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.ErrorCallback;
 import android.hardware.Camera.FaceDetectionListener;
 import android.hardware.Camera.OnZoomChangeListener;
@@ -44,6 +47,8 @@ import android.hardware.Camera.CameraMetaDataCallback;
 import com.android.camera.util.ApiHelper;
 import android.os.ConditionVariable;
 import java.lang.reflect.Method;
+
+import org.omnirom.snap.R;
 
 /**
  * A class to implement {@link CameraManager} of the Android camera framework.
@@ -233,18 +238,27 @@ class AndroidCameraManagerImpl implements CameraManager {
             try {
                 switch (msg.what) {
                     case OPEN_CAMERA:
+                        int cameraId = msg.arg1;
                         try {
-                            Method openMethod = Class.forName("android.hardware.Camera").getMethod(
-                                    "openLegacy", int.class, int.class);
-                            mCamera = (android.hardware.Camera) openMethod.invoke(
-                                    null, msg.arg1, CAMERA_HAL_API_VERSION_1_0);
-                        } catch (Exception e) {
-                            /* Retry with open if openLegacy doesn't exist/fails */
-                            Log.v(TAG, "openLegacy failed due to " + e.getMessage()
-                                    + ", using open instead");
-                            mCamera = android.hardware.Camera.open(msg.arg1);
-                        }
+                            Context context = CameraApp.getContext();
 
+                            boolean backCameraOpenLegacy = context.getResources().getBoolean(R.bool.back_camera_open_legacy);
+                            boolean frontCameraOpenLegacy = context.getResources().getBoolean(R.bool.front_camera_open_legacy);
+
+                            CameraInfo info = CameraHolder.instance().getCameraInfo()[cameraId];
+
+                            if ((info.facing == CameraInfo.CAMERA_FACING_BACK && backCameraOpenLegacy) || 
+                                (info.facing == CameraInfo.CAMERA_FACING_FRONT && frontCameraOpenLegacy)) {
+                                mCamera = android.hardware.Camera.openLegacy(cameraId,
+                                        android.hardware.Camera.CAMERA_HAL_API_VERSION_1_0);
+                            } else {
+                                mCamera = android.hardware.Camera.open(cameraId);
+                            }
+                        } catch (RuntimeException e) {
+                            /* Retry with open if openLegacy fails */
+                            Log.v(TAG, "openLegacy failed. Using open instead");
+                            mCamera = android.hardware.Camera.open(cameraId);
+                        }
                         if (mCamera != null) {
                             mParametersIsDirty = true;
 
@@ -254,7 +268,7 @@ class AndroidCameraManagerImpl implements CameraManager {
                             }
                         } else {
                             if (msg.obj != null) {
-                                ((CameraOpenErrorCallback) msg.obj).onDeviceOpenFailure(msg.arg1);
+                                ((CameraOpenErrorCallback) msg.obj).onDeviceOpenFailure(cameraId);
                             }
                         }
                         return;

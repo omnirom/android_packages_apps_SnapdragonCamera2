@@ -54,4 +54,11 @@
 
     <!-- Minimum picture size (in pixel) to include in selection list -->
     <integer name="minimum_picture_size">900000</integer>
+
+    <!-- Opens back camera using openLegacy() -->
+    <bool name="back_camera_open_legacy">true</bool>
+
+    <!-- Opens front camera using openLegacy() -->
+    <bool name="front_camera_open_legacy">true</bool>
+
 </resources>

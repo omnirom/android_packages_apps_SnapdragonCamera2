@@ -123,6 +123,7 @@ public class VideoMenu extends MenuController
                 CameraSettings.KEY_VIDEOCAMERA_FLASH_MODE,
                 CameraSettings.KEY_VIDEO_QUALITY,
                 CameraSettings.KEY_VIDEO_DURATION,
+                CameraSettings.KEY_VIDEO_SNAPSHOT_SIZE,
                 CameraSettings.KEY_RECORD_LOCATION,
                 CameraSettings.KEY_CAMERA_SAVEPATH,
                 CameraSettings.KEY_WHITE_BALANCE,

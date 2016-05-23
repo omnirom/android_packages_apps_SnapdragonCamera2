@@ -4900,6 +4900,11 @@ public class PhotoModule
                     mPreferences.getString(CameraSettings.KEY_CAMERA_SAVEPATH, "0").equals("1"));
             mActivity.updateStorageSpaceAndHint();
             updateRemainingPhotos();
+
+            // Update the gallery app
+            Intent intent = new Intent("com.android.gallery3d.STORAGE_CHANGE");
+            intent.putExtra("pref_camera_storage_key", Storage.getRoot());
+            mActivity.sendBroadcast(intent);
         }
 
         if (CameraSettings.KEY_QC_CHROMA_FLASH.equals(pref.getKey())) {

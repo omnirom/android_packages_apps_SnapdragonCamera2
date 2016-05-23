@@ -409,4 +409,12 @@ public class Storage {
         }
         return uri;
     }
+
+    public static String getRoot() {
+        if (isSaveSDCard()) {
+            return SDCard.instance().getRoot();
+        } else {
+            return Environment.getExternalStorageDirectory().toString();
+        }
+    }
 }

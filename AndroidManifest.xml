@@ -24,6 +24,7 @@
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="com.android.gallery3d.permission.STORAGE_CHANGE" />
 
     <supports-screens
         android:anyDensity="true"

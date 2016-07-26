@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2012 The OmniRom Open Source Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources>
+    <!-- Scene and filter settings -->
+    <color name="scene_item_selected">@color/material_accent_icon</color>
+    <color name="list_divider_color">@color/material_accent_icon_disabled</color>
+    <color name="popup_title_color">@color/material_accent_icon</color>
+
+    <!-- Settings/Menu  -->
+    <color name="popup_background">@color/material_bg_opaque_settings</color> <!-- Settings background -->
+    <color name="camera_switcher_background">@color/material_bg_opaque_settings</color> <!-- camera switcher background -->
+    <color name="setting_color">@color/material_dark</color> <!-- 1st level selected item -->
+    <color name="setting_color_light">@color/material_primary</color> <!-- 2nd level selected item -->
+
+    <!-- Top and bottom camera controls. opaque is for 4:3 and transparent is for 16:9 previews -->
+    <color name="camera_control_bg_opaque">@color/material_bg</color>
+    <color name="camera_control_bg_transparent">@color/material_bg_opaque</color>
+
+    <!-- Change colours here -->
+    <color name="black">#212121</color>
+    <color name="red">#ff0000</color>
+    <color name="material_accent_icon">#ffffffff</color> <!-- all icons + scene mode selected -->
+    <color name="material_accent_icon_disabled">#44ffffff</color> <!-- disabled icon -->
+    <color name="material_dark">#ff00796b</color>
+    <color name="material_primary">#ff009688</color>
+    <color name="material_light">#ffb2dfdb</color> <!-- not used, but part of pallete just in case-->
+    <color name="material_bg">#ff00302a</color>
+    <color name="material_bg_opaque">#4400302a</color>
+    <color name="material_bg_opaque_settings">#8000302a</color>
+    <color name="material_text">#4CAF50</color> <!-- text color in settings/menu -->
+    <color name="transparent">@android:color/transparent</color>
+</resources>

@@ -56,8 +56,8 @@
     <color name="icon_disabled_color">#DD777777</color>
     <color name="time_lapse_arc">#FFC5C5C5</color>
     <color name="indicator_background">#40000000</color>
-    <color name="popup_title_color">#ff33b5e5</color>
-    <color name="popup_background">#ff282828</color>
+    <!--<color name="popup_title_color">#ff33b5e5</color>-
+    <color name="popup_background">#ff282828</color>-->
     <color name="pano_progress_empty">#FF2E2E2E</color>
     <color name="pano_progress_done">#FF33525E</color>
     <color name="pano_progress_indication">#FF0099CC</color>
@@ -72,12 +72,12 @@
     <color name="gray">#FFAAAAAA</color>
     <color name="yellow_half_transparent">#80EEEE00</color>
 
-    <color name="setting_color">#ff10aadc</color>
+    <!--<color name="setting_color">#ff10aadc</color>-
     <color name="setting_color_light">#ffade9fd</color>
     <color name="list_divider_color">#d8ababab</color>
 
     <color name="camera_control_bg_opaque">#ff191919</color>
-    <color name="camera_control_bg_transparent">#4d191919</color>
+    <color name="camera_control_bg_transparent">#4d191919</color>-->
 
     <color name="refocus_indicator_1">#a0ffffff</color>
     <color name="refocus_indicator_2">#ff29b6f6</color>

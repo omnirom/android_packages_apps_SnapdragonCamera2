@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import org.omnirom.snap.R;
 import com.android.camera.ui.ModuleSwitcher;
 import com.android.camera.ui.RotateImageView;
+import com.android.camera.ui.RotateVectorView;
 import com.android.camera.ShutterButton;
 import com.android.camera.Storage;
 import com.android.camera.util.CameraUtil;
@@ -1029,9 +1030,12 @@ public class CameraControls extends RotatableLayout {
             mReviewCancelButton, mReviewDoneButton, mExitPanorama
         };
         for (View v : views) {
-            if (v != null) {
+            if (v != null && v instanceof RotateImageView) {
                 ((RotateImageView) v).setOrientation(orientation,
                                                      animation);
+            }
+            if (v instanceof RotateVectorView) {
+                ((RotateVectorView) v).setOrientation(orientation, animation);
             }
         }
         layoutRemaingPhotos();

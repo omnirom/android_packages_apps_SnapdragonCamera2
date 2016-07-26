@@ -65,7 +65,7 @@
         android:scaleType="fitCenter"
         android:src="@drawable/btn_new_shutter" />
 
-    <ImageView
+    <com.android.camera.ShutterButton
         android:id="@+id/video_button"
         android:visibility="invisible"
         android:layout_width="@dimen/shutter_size"

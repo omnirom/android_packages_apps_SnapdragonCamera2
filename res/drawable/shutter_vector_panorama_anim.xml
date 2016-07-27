@@ -1,0 +1,12 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+   android:drawable="@drawable/shutter_vector_panorama" >
+     <target
+         android:name="shutter"
+         android:animation="@anim/color_red_rec" />
+     <target
+         android:name="pano"
+         android:animation="@anim/color_red" />
+     <target
+         android:name="pano"
+         android:animation="@anim/panorama_anim" />
+</animated-vector>

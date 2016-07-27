@@ -30,6 +30,8 @@ import android.graphics.Matrix;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.Animatable;
+import android.graphics.drawable.AnimatedVectorDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
@@ -147,7 +149,8 @@ public class WideAnglePanoramaUI implements
 
     public void onStartCapture() {
         hideSwitcher();
-        mShutterButton.setImageResource(R.drawable.shutter_button_stop);
+        mShutterButton.setImageResource(R.drawable.shutter_vector_panorama_anim);
+        doShutterAnimation();
         mCaptureIndicator.setVisibility(View.VISIBLE);
         showDirectionIndicators(PanoProgressBar.DIRECTION_NONE);
     }
@@ -305,7 +308,7 @@ public class WideAnglePanoramaUI implements
     }
 
     public void reset() {
-        mShutterButton.setImageResource(R.drawable.btn_new_shutter_panorama);
+        mShutterButton.setImageResource(R.drawable.shutter_vector_panorama);
         mReviewLayout.setVisibility(View.GONE);
         mCaptureProgressBar.setVisibility(View.INVISIBLE);
     }
@@ -411,6 +414,14 @@ public class WideAnglePanoramaUI implements
         mController.onShutterButtonClick();
     }
 
+    public void doShutterAnimation() {
+        mShutterButton.setImageResource(R.drawable.shutter_vector_panorama_anim);
+        AnimatedVectorDrawable shutterVector = (AnimatedVectorDrawable) mShutterButton.getDrawable();
+        if (shutterVector != null && shutterVector instanceof Animatable) {
+            ((AnimatedVectorDrawable) shutterVector).start();
+        }
+    }
+
     @Override
     public void onShutterButtonLongClick() {}
 
@@ -467,7 +478,6 @@ public class WideAnglePanoramaUI implements
         mCaptureIndicator = mRootView.findViewById(R.id.pano_capture_indicator);
 
         mShutterButton = (ShutterButton) mRootView.findViewById(R.id.shutter_button);
-        mShutterButton.setImageResource(R.drawable.btn_new_shutter);
         mShutterButton.setOnShutterButtonListener(this);
         // Hide menu and indicators.
         mRootView.findViewById(R.id.menu).setVisibility(View.GONE);

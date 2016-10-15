@@ -476,6 +476,7 @@ public class VideoMenu extends MenuController
                 return;
             }
             // Each entry has a corresponding icon.
+            index = index % iconIds.length;
             resid = iconIds[index];
         } else {
             // The preference only has a single icon to represent it.
@@ -495,8 +496,9 @@ public class VideoMenu extends MenuController
                 CharSequence[] values = pref.getEntryValues();
                 index = (index + 1) % values.length;
                 pref.setValueIndex(index);
+                int iconListLength = ((IconListPreference) pref).getLargeIconIds().length;
                 ((ImageView) v).setImageResource(
-                        ((IconListPreference) pref).getLargeIconIds()[index]);
+                        ((IconListPreference) pref).getLargeIconIds()[index % iconListLength]);
                 if (prefKey.equals(CameraSettings.KEY_CAMERA_ID))
                     mListener.onCameraPickerClicked(index);
                 reloadPreference(pref);
@@ -736,7 +738,7 @@ public class VideoMenu extends MenuController
             mPrevSavedVideoCDS = cds;
         }
 
-        if ((tnr != null) && !tnr.equals("off")) { 
+        if ((tnr != null) && !tnr.equals("off")) {
             mListMenu.setPreferenceEnabled(
                     CameraSettings.KEY_VIDEO_CDS_MODE,false);
             mListMenu.overrideSettings(

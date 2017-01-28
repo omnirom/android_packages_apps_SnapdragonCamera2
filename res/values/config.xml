@@ -32,6 +32,9 @@
     <!-- Set's parameter "lge-camera" for LGE devices. -->
     <bool name="lge_camera">false</bool>
 
+    <!-- Enable support for camera api v2 -->
+    <bool name="support_camera_api_v2">false</bool>
+
     <!-- Restart preview for back camera onPictureTaken -->
     <bool name="back_camera_restart_preview_onPictureTaken">false</bool>
 

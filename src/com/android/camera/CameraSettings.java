@@ -38,8 +38,8 @@ import android.util.Log;
 import com.android.camera.util.ApiHelper;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.GcamHelper;
-import org.codeaurora.snapcam.R;
 import com.android.camera.util.MultiMap;
+import org.omnirom.snap.R;
 
 import java.util.ArrayList;
 import java.util.Collections;

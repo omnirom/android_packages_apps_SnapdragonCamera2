@@ -45,7 +45,7 @@ import android.widget.TextView;
 
 import com.android.camera.SettingsManager;
 
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 
 import java.util.ArrayList;
 

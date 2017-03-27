@@ -27,7 +27,7 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.codeaurora.snapcam.filter;
+package org.omnirom.snap.filter;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

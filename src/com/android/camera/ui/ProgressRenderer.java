@@ -22,7 +22,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 
 /**
  * Renders a circular progress bar on the screen.

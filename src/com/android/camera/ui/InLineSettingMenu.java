@@ -23,7 +23,7 @@ import android.view.accessibility.AccessibilityEvent;
 import android.widget.TextView;
 
 import com.android.camera.ListPreference;
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 
 /* Setting menu item that will bring up a menu when you click on it. */
 public class InLineSettingMenu extends InLineSettingItem {

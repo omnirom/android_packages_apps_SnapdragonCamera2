@@ -46,7 +46,7 @@ import com.android.camera.ui.RenderOverlay;
 import com.android.camera.ui.RotateImageView;
 import com.android.camera.ui.RotateLayout;
 
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 
 import java.util.ArrayList;
 

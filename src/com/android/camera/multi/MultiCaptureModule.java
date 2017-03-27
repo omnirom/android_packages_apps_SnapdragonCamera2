@@ -68,7 +68,7 @@ import com.android.camera.PhotoModule.NamedImages;
 import com.android.camera.PhotoModule.NamedImages.NamedEntity;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 
 public class MultiCaptureModule implements MultiCamera {
 

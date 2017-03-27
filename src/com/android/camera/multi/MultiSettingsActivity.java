@@ -78,7 +78,7 @@ import android.view.WindowManager;
 import android.util.Log;
 import android.util.Size;
 
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 import com.android.camera.ComboPreferences;
 import com.android.camera.CameraSettings;
 import com.android.camera.SettingsManager;

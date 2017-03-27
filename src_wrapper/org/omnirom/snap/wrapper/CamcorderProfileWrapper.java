@@ -27,56 +27,35 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.codeaurora.snapcam.wrapper;
+package org.omnirom.snap.wrapper;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
+import java.util.List;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import android.hardware.Camera.CameraInfo;
+import android.media.CamcorderProfile;
 import android.util.Log;
 
-public class Wrapper{
-    protected final static boolean DEBUG = false;
-    protected final static String TAG = "Wrapper";
-
-    protected static int getFieldValue(Field field, int def){
-        int value = def;
-        if ( field != null ) {
-            try {
-                value = (int) field.get(null);
-            }catch (Exception exception){
-                exception.printStackTrace();
-            }
-        }
-        return value;
-    }
-
-    protected static String getFieldValue(Field field, String def){
-        String value = def;
-        if ( field != null ) {
-            try {
-                value = (String) field.get(null);
-            }catch (Exception exception){
-                exception.printStackTrace();
-            }
-        }
-        return value;
-    }
-    protected static Field getField(Class<?> classInstance, String name) {
-        Log.d(TAG, "getField:" + classInstance + " field:"+ name);
-        if ( DEBUG ){
-            Log.e(TAG, "" + classInstance + " no " + name);
-            return null;
-        }
-
-        Field field = null;
-        try{
-            field = classInstance.getField(name);
-            Log.d(TAG, "getField:" + classInstance + " " + name);
-        }catch (Exception exception){
-            exception.printStackTrace();
-        }
-        return field;
-    }
+public class CamcorderProfileWrapper extends Wrapper{
+    public static final int QUALITY_VGA = getFieldValue(
+            getField(CamcorderProfile.class, "QUALITY_VGA"), -1);
+    public final static int QUALITY_4KDCI = getFieldValue(
+            getField(CamcorderProfile.class, "QUALITY_4KDCI"), -1);
+    public final static int QUALITY_TIME_LAPSE_VGA = getFieldValue(
+            getField(CamcorderProfile.class, "QUALITY_TIME_LAPSE_VGA"), -1);
+    public static final int QUALITY_TIME_LAPSE_4KDCI = getFieldValue(
+            getField(CamcorderProfile.class, "QUALITY_TIME_LAPSE_4KDCI"), -1);
+    public final static int QUALITY_HIGH_SPEED_CIF = getFieldValue(
+            getField(CamcorderProfile.class, "QUALITY_HIGH_SPEED_CIF"), -1);
+        public static final int QUALITY_HIGH_SPEED_VGA = getFieldValue(
+            getField(CamcorderProfile.class, "QUALITY_HIGH_SPEED_VGA"), -1);
+    public final static int QUALITY_HIGH_SPEED_4KDCI = getFieldValue(
+            getField(CamcorderProfile.class, "QUALITY_HIGH_SPEED_4KDCI"), -1);
+    public static final int QUALITY_QHD = getFieldValue(
+            getField(CamcorderProfile.class, "QUALITY_QHD"), -1);
+    public final static int QUALITY_2k = getFieldValue(
+            getField(CamcorderProfile.class, "QUALITY_2k"), -1);
+    public final static int QUALITY_8KUHD = getFieldValue(
+            getField(CamcorderProfile.class, "QUALITY_8KUHD"), -1);
 }

@@ -93,7 +93,7 @@ import com.android.camera.util.SettingTranslation;
 import com.android.camera.util.PersistUtil;
 import com.android.camera.ui.RotateTextToast;
 
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 
 public class MultiVideoModule implements MultiCamera, LocationManager.Listener,
         MediaRecorder.OnErrorListener, MediaRecorder.OnInfoListener {

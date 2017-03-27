@@ -119,7 +119,7 @@ import com.android.camera.util.PersistUtil;
 import com.android.camera.util.PhotoSphereHelper;
 import com.android.camera.util.PhotoSphereHelper.PanoramaViewHelper;
 import com.android.camera.util.UsageStatistics;
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 
 import java.io.File;
 import java.io.IOException;

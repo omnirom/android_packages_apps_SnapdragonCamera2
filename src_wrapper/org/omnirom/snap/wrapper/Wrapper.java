@@ -27,20 +27,56 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.codeaurora.snapcam.wrapper;
+package org.omnirom.snap.wrapper;
 
-import java.util.List;
+import java.io.IOException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import android.hardware.Camera.CameraInfo;
 import android.util.Log;
 
-public class CameraInfoWrapper extends Wrapper{
-    private final static String TAG = "CameraInfo";
-    public final static int CAMERA_SUPPORT_MODE_ZSL = getFieldValue(
-            getField(CameraInfo.class, "CAMERA_SUPPORT_MODE_ZSL"), 2);
-    public static final int CAMERA_SUPPORT_MODE_NONZSL = getFieldValue(
-            getField(CameraInfo.class, "CAMERA_SUPPORT_MODE_NONZSL"), 3);
+public class Wrapper{
+    protected final static boolean DEBUG = false;
+    protected final static String TAG = "Wrapper";
 
+    protected static int getFieldValue(Field field, int def){
+        int value = def;
+        if ( field != null ) {
+            try {
+                value = (int) field.get(null);
+            }catch (Exception exception){
+                exception.printStackTrace();
+            }
+        }
+        return value;
+    }
+
+    protected static String getFieldValue(Field field, String def){
+        String value = def;
+        if ( field != null ) {
+            try {
+                value = (String) field.get(null);
+            }catch (Exception exception){
+                exception.printStackTrace();
+            }
+        }
+        return value;
+    }
+    protected static Field getField(Class<?> classInstance, String name) {
+        Log.d(TAG, "getField:" + classInstance + " field:"+ name);
+        if ( DEBUG ){
+            Log.e(TAG, "" + classInstance + " no " + name);
+            return null;
+        }
+
+        Field field = null;
+        try{
+            field = classInstance.getField(name);
+            Log.d(TAG, "getField:" + classInstance + " " + name);
+        }catch (Exception exception){
+            exception.printStackTrace();
+        }
+        return field;
+    }
 }

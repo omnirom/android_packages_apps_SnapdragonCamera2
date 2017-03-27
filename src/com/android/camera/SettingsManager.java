@@ -70,7 +70,7 @@ import com.android.camera.util.ApiHelper;
 import com.android.camera.util.SettingTranslation;
 import com.android.camera.util.AutoTestUtil;
 
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 import org.json.JSONException;
 import org.json.JSONObject;
 

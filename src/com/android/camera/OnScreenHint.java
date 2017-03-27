@@ -25,7 +25,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
 
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 
 /**
  * A on-screen hint is a view containing a little message for the user and will

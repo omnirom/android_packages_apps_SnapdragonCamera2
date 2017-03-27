@@ -59,7 +59,7 @@ import com.android.camera.ui.ModuleSwitcher;
 import com.android.camera.ui.RotateLayout;
 import com.android.camera.ui.RotateImageView;
 import com.android.camera.ui.RotateTextToast;
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 import android.widget.HorizontalScrollView;
 import android.view.ViewGroup;
 import android.view.WindowManager;

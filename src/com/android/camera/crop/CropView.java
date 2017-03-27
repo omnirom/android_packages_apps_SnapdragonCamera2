@@ -32,7 +32,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 
 public class CropView extends View {
     private static final String LOGTAG = "CropView";

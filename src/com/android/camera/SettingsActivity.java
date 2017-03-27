@@ -48,7 +48,7 @@ import android.view.WindowManager;
 import android.util.Log;
 import android.widget.Toast;
 
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 import com.android.camera.util.CameraUtil;
 
 import java.util.List;

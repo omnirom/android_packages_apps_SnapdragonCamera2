@@ -86,7 +86,7 @@ import com.android.camera.ui.TrackingFocusRenderer;
 import com.android.camera.ui.ZoomRenderer;
 import com.android.camera.util.CameraUtil;
 
-import org.codeaurora.snapcam.R;
+import org.omnirom.snap.R;
 
 import java.util.List;
 import java.util.Locale;

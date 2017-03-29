@@ -35,9 +35,9 @@ LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 # the libraries in the APK, otherwise just put them in /system/lib and
 # leave them out of the APK
 ifneq (,$(TARGET_BUILD_APPS))
-  LOCAL_JNI_SHARED_LIBRARIES := libjni_snapcammosaic libjni_snapcamtinyplanet libjni_imageutil
+  LOCAL_JNI_SHARED_LIBRARIES := libjni_snapcammosaiccaf libjni_snapcamtinyplanetcaf libjni_imageutilcaf
 else
-  LOCAL_REQUIRED_MODULES := libjni_snapcammosaic libjni_snapcamtinyplanet libjni_imageutil
+  LOCAL_REQUIRED_MODULES := libjni_snapcammosaiccaf libjni_snapcamtinyplanetcaf libjni_imageutilcaf
 endif
 
 include $(BUILD_PACKAGE)

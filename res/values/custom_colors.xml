@@ -33,13 +33,13 @@
     <color name="black">#212121</color>
     <color name="red">#ff0000</color>
     <color name="material_accent_icon">#ffffffff</color> <!-- all icons + scene mode selected -->
-    <color name="material_accent_icon_disabled">#44ffffff</color> <!-- disabled icon -->
+    <color name="material_accent_icon_disabled">#74ffffff</color> <!-- disabled icon -->
     <color name="material_dark">#ff00796b</color>
     <color name="material_primary">#ff009688</color>
     <color name="material_light">#ffb2dfdb</color> <!-- not used, but part of pallete just in case-->
     <color name="material_bg">#ff00302a</color>
-    <color name="material_bg_opaque">#4400302a</color>
-    <color name="material_bg_opaque_settings">#8000302a</color>
+    <color name="material_bg_opaque">#2400302a</color>
+    <color name="material_bg_opaque_settings">#6000302a</color>
     <color name="material_text">#4CAF50</color> <!-- text color in settings/menu -->
     <color name="transparent">@android:color/transparent</color>
 </resources>

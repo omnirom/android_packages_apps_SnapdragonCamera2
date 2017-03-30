@@ -878,7 +878,7 @@ public class PhotoUI implements PieListener,
             if (level == 2)
                 mMenu.animateFadeIn(popup);
         } else
-            popup.setAlpha(0.85f);
+            popup.setAlpha(1f);
     }
 
     public void removeLevel2() {

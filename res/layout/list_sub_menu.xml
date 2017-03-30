@@ -33,7 +33,7 @@
     android:background="@drawable/list_border"
     android:divider="@color/list_divider_color"
     android:dividerHeight="1dp"
-    android:listSelector="@drawable/list_selector"
+    android:choiceMode="singleChoice"
     android:scrollbars="none" >
 
 </com.android.camera.ui.ListSubMenu>

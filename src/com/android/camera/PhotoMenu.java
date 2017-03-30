@@ -1213,7 +1213,7 @@ public class PhotoMenu extends MenuController
                                 v1.setBackground(null);
                             }
                             ImageView image = (ImageView) v.findViewById(R.id.image);
-                            image.setBackgroundColor(0xff33b5e5);
+                            image.setBackgroundResource(R.color.scene_item_selected);
                         }
                     }
                     return true;
@@ -1222,7 +1222,7 @@ public class PhotoMenu extends MenuController
 
             views[j] = imageView;
             if (i == init)
-                imageView.setBackgroundColor(0xff33b5e5);
+                imageView.setBackgroundResource(R.color.scene_item_selected);
             TextView label = (TextView) layout2.findViewById(R.id.label);
             imageView.setImageResource(thumbnails[i]);
             label.setText(entries[i]);

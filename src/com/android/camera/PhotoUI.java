@@ -1227,6 +1227,9 @@ public class PhotoUI implements PieListener,
             mLocationDialog.dismiss();
         }
         mLocationDialog = null;
+        if (mMenu != null) {
+            mMenu.animateSlideOutPreviewMenu();
+        }
     }
 
     public void initDisplayChangeListener() {

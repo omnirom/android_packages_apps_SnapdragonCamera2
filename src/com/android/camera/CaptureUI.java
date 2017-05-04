@@ -484,7 +484,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         mActivity.setPreviewGestures(mGestures);
         mRecordingTimeRect.setVisibility(View.GONE);
-        showFirstTimeHelp();
+        //showFirstTimeHelp();
     }
 
     protected void showCapturedImageForReview(byte[] jpegData, int orientation, boolean mirror) {

@@ -308,7 +308,7 @@ public class PhotoUI implements PieListener,
         mScreenRatio = CameraUtil.determineRatio(size.x, size.y);
         calculateMargins(size);
         mCameraControls.setMargins(mTopMargin, mBottomMargin);
-        showFirstTimeHelp();
+        //showFirstTimeHelp();
     }
 
     private void calculateMargins(Point size) {

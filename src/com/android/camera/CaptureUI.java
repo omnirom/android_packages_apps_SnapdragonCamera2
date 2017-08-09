@@ -35,6 +35,9 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.Animatable;
+import android.graphics.drawable.AnimatedVectorDrawable;
+import android.graphics.drawable.VectorDrawable;
 import android.hardware.Camera.Face;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
@@ -166,7 +169,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     };
 
     private ShutterButton mShutterButton;
-    private ImageView mVideoButton;
+    private ShutterButton mVideoButton;
     private RenderOverlay mRenderOverlay;
     private FlashToggleButton mFlashButton;
     private CountDownView mCountDownView;
@@ -281,7 +284,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         mRenderOverlay = (RenderOverlay) mRootView.findViewById(R.id.render_overlay);
         mShutterButton = (ShutterButton) mRootView.findViewById(R.id.shutter_button);
-        mVideoButton = (ImageView) mRootView.findViewById(R.id.video_button);
+        mVideoButton = (ShutterButton) mRootView.findViewById(R.id.video_button);
         mExitBestMode = (ImageView) mRootView.findViewById(R.id.exit_best_mode);
         mFilterModeSwitcher = mRootView.findViewById(R.id.filter_mode_switcher);
         mSceneModeSwitcher = mRootView.findViewById(R.id.scene_mode_switcher);
@@ -599,11 +602,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mVideoButton.setVisibility(View.VISIBLE);
         }
         mShutterButton.setOnShutterButtonListener(mModule);
-        mShutterButton.setImageResource(R.drawable.one_ui_shutter_anim);
+        mShutterButton.setImageResource(R.drawable.shutter_button_anim);
         mShutterButton.setOnClickListener(new View.OnClickListener()  {
             @Override
             public void onClick(View v) {
-                    doShutterAnimation();
+                    doShutterAnimation(mShutterButton);
             }
         });
         mVideoButton.setOnClickListener(new View.OnClickListener() {
@@ -746,14 +749,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             } else {
                 mFlashButton.init(true);
             }
-            mVideoButton.setImageResource(R.drawable.video_stop);
+            mVideoButton.setImageResource(R.drawable.shutter_vector_video_anim);
             mRecordingTimeView.setText("");
             mRecordingTimeRect.setVisibility(View.VISIBLE);
             mMuteButton.setVisibility(View.VISIBLE);
+            doShutterAnimation(mVideoButton);
         } else {
             mFlashButton.setVisibility(View.VISIBLE);
             mFlashButton.init(false);
-            mVideoButton.setImageResource(R.drawable.video_capture);
+            mVideoButton.setImageResource(R.drawable.shutter_vector_video);
             mRecordingTimeRect.setVisibility(View.GONE);
             mMuteButton.setVisibility(View.INVISIBLE);
         }
@@ -1141,11 +1145,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mCameraControls.setIntentMode(mModule.getCurrentIntentMode());
         }
     }
-
-    public void doShutterAnimation() {
-        AnimationDrawable frameAnimation = (AnimationDrawable) mShutterButton.getDrawable();
-        frameAnimation.stop();
-        frameAnimation.start();
+    public void doShutterAnimation(){
+        doShutterAnimation(mShutterButton);
+    }
+    
+    public void doShutterAnimation(ShutterButton mShutter) {
+        AnimatedVectorDrawable shutterVector = (AnimatedVectorDrawable) mShutter.getDrawable();
+        if (shutterVector != null && shutterVector instanceof Animatable) {
+            ((AnimatedVectorDrawable) shutterVector).start();
+        }
     }
 
     public void showUI() {

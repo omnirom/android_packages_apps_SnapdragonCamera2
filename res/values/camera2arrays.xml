@@ -188,21 +188,21 @@
     </string-array>
 
     <array name="pref_camera2_scenemode_thumbnails" translatable="false">
-        <item>@drawable/auto</item>
-        <item>@drawable/hdr</item>
-        <item>@drawable/hdr</item>
+        <item>@drawable/ic_scene_mode_auto</item>
+        <item>@drawable/ic_scene_mode_hdr</item>
+        <item>@drawable/ic_scene_mode_hdr</item>
         <item>@drawable/ubifocus</item>
         <item>@drawable/optizoom</item>
-        <item>@drawable/portrait</item>
-        <item>@drawable/landscape</item>
-        <item>@drawable/sports</item>
-        <item>@drawable/flower</item>
-        <item>@drawable/backlight</item>
-        <item>@drawable/candlelight</item>
-        <item>@drawable/sunset</item>
-        <item>@drawable/night</item>
-        <item>@drawable/beach</item>
-        <item>@drawable/snow</item>
+        <item>@drawable/ic_scene_mode_portrait</item>
+        <item>@drawable/ic_scene_mode_landscape</item>
+        <item>@drawable/ic_scene_mode_sports</item>
+        <item>@drawable/ic_scene_mode_flower</item>
+        <item>@drawable/ic_scene_mode_backlight</item>
+        <item>@drawable/ic_scene_mode_candlelight</item>
+        <item>@drawable/ic_scene_mode_sunset</item>
+        <item>@drawable/ic_scene_mode_night</item>
+        <item>@drawable/ic_scene_mode_beach</item>
+        <item>@drawable/ic_scene_mode_snow</item>
         <item>@drawable/ic_scene_mode_smartauto</item>
         <item>@drawable/pick_the_best_photo</item>
         <item>@drawable/chroma_flash</item>

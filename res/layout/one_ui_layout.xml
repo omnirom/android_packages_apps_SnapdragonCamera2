@@ -48,7 +48,7 @@
         android:scaleType="fitCenter"
         android:src="@drawable/photo_capture" />
 
-    <com.android.camera.ui.RotateImageView
+    <com.android.camera.ShutterButton
         android:id="@+id/video_button"
         android:layout_width="@dimen/one_ui_bottom_small"
         android:layout_height="@dimen/one_ui_bottom_small"
@@ -56,7 +56,7 @@
         android:contentDescription="@string/accessibility_shutter_button"
         android:focusable="true"
         android:scaleType="fitCenter"
-        android:src="@drawable/video_capture" />
+        android:src="@drawable/shutter_vector_video" />
 
     <com.android.camera.PauseButton
         android:id="@+id/video_pause"

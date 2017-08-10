@@ -1001,7 +1001,7 @@ public class CameraControls extends RotatableLayout {
 
     public void setPreviewRatio(float ratio, boolean panorama) {
         if (panorama) {
-            mPaint.setColor(Color.TRANSPARENT);
+            mPaint.setColor(getResources().getColor(R.color.camera_control_bg_opaque));
         } else {
             int r = CameraUtil.determineRatio(ratio);
             mPreviewRatio = r;

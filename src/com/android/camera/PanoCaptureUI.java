@@ -121,14 +121,14 @@ public class PanoCaptureUI implements
                         mThumbnail.setVisibility(View.GONE);
                     }
                     if (mShutterButton != null) {
-                        mShutterButton.setImageResource(R.drawable.shutter_button_video_stop);
+                        mShutterButton.setImageResource(R.drawable.shutter_vector_panorama);
                     }
                 } else {
                     if (mThumbnail != null) {
                         mThumbnail.setVisibility(View.VISIBLE);
                     }
                     if (mShutterButton != null) {
-                        mShutterButton.setImageResource(R.drawable.btn_new_shutter_panorama);
+                        mShutterButton.setImageResource(R.drawable.shutter_vector_panorama_anim);
                     }
                 }
             }
@@ -306,7 +306,7 @@ public class PanoCaptureUI implements
 
     public void initializeShutterButton() {
         // Initialize shutter button.
-        mShutterButton.setImageResource(R.drawable.btn_new_shutter_panorama);
+        mShutterButton.setImageResource(R.drawable.shutter_vector_panorama);
         mShutterButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {

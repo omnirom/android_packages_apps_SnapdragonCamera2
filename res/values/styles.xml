@@ -205,7 +205,7 @@
     </style>
     <style name="TextAppearance.DialogWindowTitle" parent="">
         <item name="android:textSize">22sp</item>
-        <item name="android:textColor">@color/holo_blue_light</item>
+        <item name="android:textColor">@color/material_primary</item>
     </style>
     <style name="TextAppearance.Medium" parent="@android:style/TextAppearance.Medium"/>
     <style name="Widget.Button.Borderless" parent="android:Widget.Button">

@@ -29,7 +29,7 @@
     <com.android.camera.ui.FlashToggleButton
         android:id="@+id/flash_button"
         style="@style/OneUIMenuButton"
-        android:src="@drawable/flash" />
+        android:src="@drawable/ic_flash_on" />
 
     <com.android.camera.ui.RotateImageView
         android:id="@+id/mute_button"
@@ -112,7 +112,7 @@
     <com.android.camera.ui.RotateImageView
         android:id="@+id/front_back_switcher"
         style="@style/OneUIMenuButton"
-        android:src="@drawable/front_back_camera" />
+        android:src="@drawable/ic_switch_back" />
 
     <com.android.camera.ui.RotateImageView
         android:id="@+id/hdr_switcher"
@@ -121,12 +121,12 @@
     <com.android.camera.ui.RotateImageView
         android:id="@+id/scene_mode_switcher"
         style="@style/OneUIMenuButton"
-        android:src="@drawable/more_options" />
+        android:src="@drawable/ic_hamburger" />
 
     <com.android.camera.ui.RotateImageView
         android:id="@+id/filter_mode_switcher"
         style="@style/OneUIMenuButton"
-        android:src="@drawable/filters" />
+        android:src="@drawable/ic_settings_filter" />
 
     <com.android.camera.ui.RotateImageView
         android:id="@+id/ts_makeup_switcher"

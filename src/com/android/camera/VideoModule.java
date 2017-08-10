@@ -799,6 +799,8 @@ public class VideoModule implements CameraModule,
             onStopVideoRecording();
         } else {
             if (!startVideoRecording()) {
+                // make sure shutter button anim stops
+                mUI.showRecordingUI(false);
                 // Show ui when start recording failed.
                 mUI.showUIafterRecording();
             }
@@ -921,14 +923,12 @@ public class VideoModule implements CameraModule,
         String highFrameRate = mPreferences.getString(
             CameraSettings.KEY_VIDEO_HIGH_FRAME_RATE,
             mActivity. getString(R.string.pref_camera_hfr_default));
-        if (("hfr".equals(highFrameRate.substring(0,3))) ||
-                ("hsr".equals(highFrameRate.substring(0,3)))) {
-            String rate = highFrameRate.substring(3);
-            Log.i(TAG,"HFR :"  + highFrameRate + " : rate = " + rate);
+        if (!highFrameRate.equals("off")) {
+            Log.i(TAG,"HFR :"  + highFrameRate);
             try {
-                hfrRate = Integer.parseInt(rate);
+                hfrRate = Integer.parseInt(highFrameRate);
             } catch (NumberFormatException nfe) {
-                Log.e(TAG, "Invalid hfr rate " + rate);
+                Log.e(TAG, "Invalid hfr rate " + highFrameRate);
             }
         }
 
@@ -1574,7 +1574,8 @@ public class VideoModule implements CameraModule,
             }
             mMediaRecorder.setOutputFormat(mProfile.fileFormat);
             mMediaRecorder.setVideoFrameRate(mProfile.videoFrameRate);
-            mMediaRecorder.setVideoEncodingBitRate(mProfile.videoBitRate);
+            mMediaRecorder.setVideoEncodingBitRate(mProfile.videoBitRate *
+                                                ((isHSR ? captureRate : 30) / 30));
             mMediaRecorder.setVideoEncoder(mProfile.videoCodec);
             if (isHSR) {
                 Log.i(TAG, "Configuring audio for HSR");
@@ -1610,7 +1611,7 @@ public class VideoModule implements CameraModule,
 
             // Profiles advertizes bitrate corresponding to published framerate.
             // In case framerate is different, scale the bitrate
-            int scaledBitrate = getHighSpeedVideoEncoderBitRate(mProfile, targetFrameRate);
+            int scaledBitrate = (int) (mProfile.videoBitRate * ((double) targetFrameRate / (double) mProfile.videoFrameRate));
             Log.i(TAG, "Scaled Video bitrate : " + scaledBitrate);
             mMediaRecorder.setVideoEncodingBitRate(scaledBitrate);
         }

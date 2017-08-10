@@ -21,7 +21,7 @@ LOCAL_AAPT_FLAGS := \
         --version-name "$(version_name_package)" \
         --version-code $(version_code_package) \
 
-LOCAL_PACKAGE_NAME := SnapdragonCameraCAF
+LOCAL_PACKAGE_NAME := SnapdragonCamera2
 
 #LOCAL_SDK_VERSION := current
 LOCAL_RENDERSCRIPT_TARGET_API := 23
@@ -34,9 +34,9 @@ LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 # the libraries in the APK, otherwise just put them in /system/lib and
 # leave them out of the APK
 ifneq (,$(TARGET_BUILD_APPS))
-  LOCAL_JNI_SHARED_LIBRARIES := libjni_snapcammosaiccaf libjni_snapcamtinyplanetcaf libjni_imageutil
+  LOCAL_JNI_SHARED_LIBRARIES := libjni_snapcammosaic2 libjni_snapcamtinyplanetn libjni_imageutil
 else
-  LOCAL_REQUIRED_MODULES := libjni_snapcammosaiccaf libjni_snapcamtinyplanetcaf libjni_imageutil
+  LOCAL_REQUIRED_MODULES := libjni_snapcammosaic2 libjni_snapcamtinyplanet2 libjni_imageutil
 endif
 
 include $(BUILD_PACKAGE)

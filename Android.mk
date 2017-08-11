@@ -1,3 +1,5 @@
+ifeq ($(BOARD_USES_SNAPDRAGONCAMERA_VERSION),2)
+
 LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
@@ -34,9 +36,9 @@ LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 # the libraries in the APK, otherwise just put them in /system/lib and
 # leave them out of the APK
 ifneq (,$(TARGET_BUILD_APPS))
-  LOCAL_JNI_SHARED_LIBRARIES := libjni_snapcammosaic2 libjni_snapcamtinyplanet2 libjni_imageutil2
+  LOCAL_JNI_SHARED_LIBRARIES := libjni_snapcammosaic libjni_snapcamtinyplanet libjni_imageutil
 else
-  LOCAL_REQUIRED_MODULES := libjni_snapcammosaic2 libjni_snapcamtinyplanet2 libjni_imageutil2
+  LOCAL_REQUIRED_MODULES := libjni_snapcammosaic libjni_snapcamtinyplanet libjni_imageutil
 endif
 
 include $(BUILD_PACKAGE)

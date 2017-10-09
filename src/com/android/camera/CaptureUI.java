@@ -1148,6 +1148,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void doShutterAnimation(){
         doShutterAnimation(mShutterButton);
     }
+
+    public void doStopShutterAnimation(ShutterButton mShutter) {
+        AnimatedVectorDrawable shutterVector = (AnimatedVectorDrawable) mShutter.getDrawable();
+        if (shutterVector != null && shutterVector instanceof Animatable) {
+            ((AnimatedVectorDrawable) shutterVector).stop();
+        }
+    }
     
     public void doShutterAnimation(ShutterButton mShutter) {
         AnimatedVectorDrawable shutterVector = (AnimatedVectorDrawable) mShutter.getDrawable();
@@ -1633,6 +1640,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mRecordingTimeView.setCompoundDrawablesWithIntrinsicBounds(
                 R.drawable.ic_pausing_indicator, 0, 0, 0);
         mModule.onButtonPause();
+        doStopShutterAnimation(mVideoButton);
     }
 
     @Override
@@ -1640,6 +1648,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mRecordingTimeView.setCompoundDrawablesWithIntrinsicBounds(
                 R.drawable.ic_recording_indicator, 0, 0, 0);
         mModule.onButtonContinue();
+        doShutterAnimation(mVideoButton);
     }
 
     @Override

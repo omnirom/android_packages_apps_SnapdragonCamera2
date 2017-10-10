@@ -713,8 +713,7 @@ public class VideoUI implements PieRenderer.PieListener,
         {
             @Override
             public void onClick(View v) {
-                if (!CameraControls.isAnimating())
-                    doShutterAnimation();
+                doShutterAnimation();
             }
         });
         mShutterButton.setOnShutterButtonListener(mController);
@@ -729,6 +728,14 @@ public class VideoUI implements PieRenderer.PieListener,
         AnimatedVectorDrawable shutterVector = (AnimatedVectorDrawable) mShutterButton.getDrawable();
         if (shutterVector != null && shutterVector instanceof Animatable) {
             ((AnimatedVectorDrawable) shutterVector).start();
+        }
+    }
+
+    public void doStopShutterAnimation() {
+        mShutterButton.setImageResource(R.drawable.shutter_vector_video_anim);
+        AnimatedVectorDrawable shutterVector = (AnimatedVectorDrawable) mShutterButton.getDrawable();
+        if (shutterVector != null && shutterVector instanceof Animatable) {
+            ((AnimatedVectorDrawable) shutterVector).stop();
         }
     }
 
@@ -1187,6 +1194,7 @@ public class VideoUI implements PieRenderer.PieListener,
         mRecordingTimeView.setCompoundDrawablesWithIntrinsicBounds(
                 R.drawable.ic_pausing_indicator, 0, 0, 0);
         mController.onButtonPause();
+        doStopShutterAnimation();
     }
 
     @Override
@@ -1194,6 +1202,7 @@ public class VideoUI implements PieRenderer.PieListener,
         mRecordingTimeView.setCompoundDrawablesWithIntrinsicBounds(
                 R.drawable.ic_recording_indicator, 0, 0, 0);
         mController.onButtonContinue();
+        doShutterAnimation();
     }
 
     public void resetPauseButton() {

@@ -77,14 +77,14 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import android.util.Size;
 import java.util.TimeZone;
 import java.util.concurrent.Semaphore;
 
 import com.android.camera.imageprocessor.filter.ImageFilter;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
-
-import android.util.Size;
+import com.android.camera.util.VendorTagUtil;
 
 public class PostProcessor{
 
@@ -391,6 +391,7 @@ public class PostProcessor{
         public void onCaptureCompleted(CameraCaptureSession session,
                                        CaptureRequest request,
                                        TotalCaptureResult result) {
+            Log.d(TAG, "onCaptureCompleted");
             if(mTotalCaptureResultList.size() <= PostProcessor.MAX_REQUIRED_IMAGE_NUM) {
                 mTotalCaptureResultList.add(result);
             }
@@ -405,11 +406,13 @@ public class PostProcessor{
         public void onCaptureFailed(CameraCaptureSession session,
                                     CaptureRequest request,
                                     CaptureFailure result) {
+            Log.d(TAG, "onCaptureFailed");
         }
 
         @Override
         public void onCaptureSequenceCompleted(CameraCaptureSession session, int
                 sequenceId, long frameNumber) {
+            Log.d(TAG, "onCaptureSequenceCompleted");
             if(!isFilterOn()) {
                 mController.unlockFocus(mController.getMainCameraId());
             }
@@ -523,8 +526,8 @@ public class PostProcessor{
                         CaptureRequest.EDGE_MODE_HIGH_QUALITY);
                 builder.set(CaptureRequest.NOISE_REDUCTION_MODE,
                         CaptureRequest.NOISE_REDUCTION_MODE_HIGH_QUALITY);
-                builder.set(CaptureModule.CdsModeKey, 2); // CDS 0-OFF, 1-ON, 2-AUTO
-                builder.set(CaptureModule.JpegCropEnableKey, (byte)1);
+                VendorTagUtil.setCdsMode(builder, 2); // CDS 0-OFF, 1-ON, 2-AUTO
+                VendorTagUtil.setJpegCropEnable(builder, (byte)1);
                 Rect cropRect = image.getCropRect();
                 if(cropRect == null ||
                         cropRect.isEmpty()) {
@@ -536,9 +539,9 @@ public class PostProcessor{
                 float targetRatio = (float)targetWidth / (float)targetHeight;
                 cropRect = CameraUtil.getFinalCropRect(cropRect, targetRatio);
                 // has crop rect. apply to jpeg request
-                builder.set(CaptureModule.JpegCropRectKey,
+                VendorTagUtil.setJpegCropRect(builder,
                         new int[] {cropRect.left, cropRect.top, cropRect.width(), cropRect.height()});
-                builder.set(CaptureModule.JpegRoiRectKey,
+                VendorTagUtil.setJpegRoiRect(builder,
                         new int[] {0, 0, targetWidth, targetHeight});
 
                 Location location = mController.getLocationManager().getCurrentLocation();
@@ -561,17 +564,20 @@ public class PostProcessor{
                     public void onCaptureCompleted(CameraCaptureSession session,
                                                    CaptureRequest request,
                                                    TotalCaptureResult result) {
+                        Log.d(TAG, "reprocessImage onCaptureCompleted");
                     }
 
                     @Override
                     public void onCaptureFailed(CameraCaptureSession session,
                                                 CaptureRequest request,
                                                 CaptureFailure result) {
+                        Log.d(TAG, "reprocessImage onCaptureFailed");
                     }
 
                     @Override
                     public void onCaptureSequenceCompleted(CameraCaptureSession session, int
                             sequenceId, long frameNumber) {
+                        Log.d(TAG, "reprocessImage onCaptureSequenceCompleted");
                     }
                 }, mHandler);
             } catch (CameraAccessException e) {
@@ -668,18 +674,21 @@ public class PostProcessor{
         return false;
     }
 
-    public void onOpen(int postFilterId, boolean isFlashModeOn, boolean isTrackingFocusOn, boolean isMakeupOn, boolean isSelfieMirrorOn, boolean isSaveRaw) {
+    public void onOpen(int postFilterId, boolean isFlashModeOn, boolean isTrackingFocusOn,
+                       boolean isMakeupOn, boolean isSelfieMirrorOn, boolean isSaveRaw,
+                       boolean isSupportedQcfa) {
         mImageHandlerTask = new ImageHandlerTask();
         mSaveRaw = isSaveRaw;
         if(setFilter(postFilterId) || isFlashModeOn || isTrackingFocusOn || isMakeupOn || isSelfieMirrorOn
                 || PersistUtil.getCameraZSLDisabled()
-                || "disable".equals(SettingsManager.getInstance().getValue(SettingsManager.KEY_ZSL))
+                || !SettingsManager.getInstance().isZSLInAppEnabled()
                 || "enable".equals(
                          SettingsManager.getInstance().getValue(SettingsManager.KEY_AUTO_HDR))
                 || SettingsManager.getInstance().isCamera2HDRSupport()
                 || "18".equals(SettingsManager.getInstance().getValue(
                                   SettingsManager.KEY_SCENE_MODE))
-                || mController.getCameraMode() == CaptureModule.DUAL_MODE) {
+                || mController.getCameraMode() == CaptureModule.DUAL_MODE
+                || isSupportedQcfa) {
             mUseZSL = false;
         } else {
             mUseZSL = true;
@@ -1092,8 +1101,7 @@ public class PostProcessor{
                             if (mController.isQuickCapture()) {
                                 mController.onCaptureDone();
                             } else {
-                                mController.showCapturedReview(
-                                        bytes, mOrientation, isSelfieMirrorOn());
+                                mController.showCapturedReview(bytes, mOrientation);
                             }
                         }
                         mActivity.getMediaSaveService().addImage(
@@ -1167,8 +1175,7 @@ public class PostProcessor{
                         if (mController.isQuickCapture()) {
                             mController.onCaptureDone();
                         } else {
-                            mController.showCapturedReview(bytes,
-                                            orientation, isSelfieMirrorOn());
+                            mController.showCapturedReview(bytes, orientation);
                         }
                     } else {
                         mActivity.getMediaSaveService().addImage(

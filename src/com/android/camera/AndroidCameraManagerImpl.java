@@ -49,6 +49,7 @@ import android.os.ConditionVariable;
 import java.lang.reflect.Method;
 
 import org.omnirom.snap.R;
+import org.codeaurora.snapcam.wrapper.CameraWrapper;
 
 /**
  * A class to implement {@link CameraManager} of the Android camera framework.
@@ -403,19 +404,19 @@ class AndroidCameraManagerImpl implements CameraManager {
                         return;
 
                     case SET_HISTOGRAM_MODE:
-                        mCamera.setHistogramMode((CameraDataCallback) msg.obj);
+                        CameraWrapper.setHistogramMode(mCamera, (CameraDataCallback) msg.obj);
                         break;
 
                     case SEND_HISTOGRAM_DATA:
-                        mCamera.sendHistogramData();
+                        CameraWrapper.sendHistogramData(mCamera);
                         break;
 
                     case SET_LONGSHOT:
-                        mCamera.setLongshot((Boolean) msg.obj);
+                        CameraWrapper.setLongshot(mCamera, (Boolean) msg.obj);
                         break;
 
                     case SET_AUTO_HDR_MODE:
-                        mCamera.setMetadataCb((CameraMetaDataCallback) msg.obj);
+                        CameraWrapper.setMetadataCb(mCamera, (CameraMetaDataCallback) msg.obj);
                         break;
 
                     default:
@@ -514,7 +515,6 @@ class AndroidCameraManagerImpl implements CameraManager {
         public void lock() {
             mCameraHandler.sendEmptyMessage(LOCK);
         }
-
         @Override
         public void setMetadataCb(CameraMetaDataCallback cb){
             mCameraHandler.obtainMessage(SET_AUTO_HDR_MODE, cb).sendToTarget();
@@ -678,6 +678,7 @@ class AndroidCameraManagerImpl implements CameraManager {
         public void setHistogramMode(CameraDataCallback cb) {
             mCameraHandler.obtainMessage(SET_HISTOGRAM_MODE, cb).sendToTarget();
         }
+
         @Override
         public void sendHistogramData() {
             mCameraHandler.sendEmptyMessage(SEND_HISTOGRAM_DATA);

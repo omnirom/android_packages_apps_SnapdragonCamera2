@@ -13,6 +13,7 @@ LOCAL_STATIC_JAVA_LIBRARIES += xmp_toolkit
 LOCAL_SRC_FILES := $(call all-java-files-under, src)
 LOCAL_SRC_FILES += $(call all-java-files-under, src_pd)
 LOCAL_SRC_FILES += $(call all-java-files-under, src_pd_gcam)
+LOCAL_SRC_FILES += $(call all-java-files-under, src_wrapper)
 LOCAL_SRC_FILES += $(call all-renderscript-files-under, rs)
 
 LOCAL_RESOURCE_DIR += $(LOCAL_PATH)/res
@@ -27,6 +28,7 @@ LOCAL_PACKAGE_NAME := SnapdragonCamera2
 
 #LOCAL_SDK_VERSION := current
 LOCAL_RENDERSCRIPT_TARGET_API := 23
+LOCAL_JACK_ENABLED := disabled
 
 LOCAL_OVERRIDES_PACKAGES := Camera2
 

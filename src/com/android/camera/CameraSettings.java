@@ -40,6 +40,9 @@ import com.android.camera.util.CameraUtil;
 import com.android.camera.util.GcamHelper;
 import com.android.camera.util.MultiMap;
 import org.omnirom.snap.R;
+import com.android.camera.util.PersistUtil;
+import org.codeaurora.snapcam.wrapper.CamcorderProfileWrapper;
+import org.codeaurora.snapcam.wrapper.ParametersWrapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -315,14 +318,22 @@ public class CameraSettings {
         VIDEO_ENCODER_TABLE.put(MediaRecorder.VideoEncoder.MPEG_4_SP, "m4v");
 
         //video qualities
-        VIDEO_QUALITY_TABLE.put("4096x2160", CamcorderProfile.QUALITY_4KDCI);
+        if ( CamcorderProfileWrapper.QUALITY_4KDCI != -1 ) {
+            VIDEO_QUALITY_TABLE.put("4096x2160", CamcorderProfileWrapper.QUALITY_4KDCI);
+        }
         VIDEO_QUALITY_TABLE.put("3840x2160", CamcorderProfile.QUALITY_2160P);
-        VIDEO_QUALITY_TABLE.put("2560x1440", CamcorderProfile.QUALITY_QHD);
-        VIDEO_QUALITY_TABLE.put("2048x1080", CamcorderProfile.QUALITY_2k);
+        if ( CamcorderProfileWrapper.QUALITY_QHD != -1 ) {
+            VIDEO_QUALITY_TABLE.put("2560x1440", CamcorderProfileWrapper.QUALITY_QHD);
+        }
+        if ( CamcorderProfileWrapper.QUALITY_2k != -1 ) {
+            VIDEO_QUALITY_TABLE.put("2048x1080", CamcorderProfileWrapper.QUALITY_2k);
+        }
         VIDEO_QUALITY_TABLE.put("1920x1080", CamcorderProfile.QUALITY_1080P);
         VIDEO_QUALITY_TABLE.put("1280x720",  CamcorderProfile.QUALITY_720P);
         VIDEO_QUALITY_TABLE.put("720x480",   CamcorderProfile.QUALITY_480P);
-        VIDEO_QUALITY_TABLE.put("640x480",   CamcorderProfile.QUALITY_VGA);
+        if ( CamcorderProfileWrapper.QUALITY_VGA != -1 ) {
+            VIDEO_QUALITY_TABLE.put("640x480", CamcorderProfileWrapper.QUALITY_VGA);
+        }
         VIDEO_QUALITY_TABLE.put("352x288",   CamcorderProfile.QUALITY_CIF);
         VIDEO_QUALITY_TABLE.put("320x240",   CamcorderProfile.QUALITY_QVGA);
         VIDEO_QUALITY_TABLE.put("176x144",   CamcorderProfile.QUALITY_QCIF);
@@ -333,6 +344,10 @@ public class CameraSettings {
         VIDEO_ENCODER_BITRATE.put("1280x720:120",  35000000);
         VIDEO_ENCODER_BITRATE.put("1280x720:240",  72000000);
         VIDEO_ENCODER_BITRATE.put("720:480:120",   5200000);
+
+        //resolution, fps and encoder type
+        VIDEO_ENCODER_BITRATE.put("3840x2160:60:" + MediaRecorder.VideoEncoder.H264,  67200000);
+        VIDEO_ENCODER_BITRATE.put("3840x2160:60:" + MediaRecorder.VideoEncoder.HEVC,  50400000);
 
    }
 
@@ -352,8 +367,12 @@ public class CameraSettings {
         VIDEO_QUALITY_TO_TIMELAPSE.put(CamcorderProfile.QUALITY_1080P, CamcorderProfile.QUALITY_TIME_LAPSE_1080P);
         VIDEO_QUALITY_TO_TIMELAPSE.put(CamcorderProfile.QUALITY_QVGA , CamcorderProfile.QUALITY_TIME_LAPSE_QVGA );
         VIDEO_QUALITY_TO_TIMELAPSE.put(CamcorderProfile.QUALITY_2160P, CamcorderProfile.QUALITY_TIME_LAPSE_2160P);
-        VIDEO_QUALITY_TO_TIMELAPSE.put(CamcorderProfile.QUALITY_VGA  , CamcorderProfile.QUALITY_TIME_LAPSE_VGA  );
-        VIDEO_QUALITY_TO_TIMELAPSE.put(CamcorderProfile.QUALITY_4KDCI, CamcorderProfile.QUALITY_TIME_LAPSE_4KDCI);
+       if ( CamcorderProfileWrapper.QUALITY_VGA != -1 ) {
+           VIDEO_QUALITY_TO_TIMELAPSE.put(CamcorderProfileWrapper.QUALITY_VGA, CamcorderProfileWrapper.QUALITY_TIME_LAPSE_VGA);
+       }
+       if ( CamcorderProfileWrapper.QUALITY_4KDCI != -1 ) {
+           VIDEO_QUALITY_TO_TIMELAPSE.put(CamcorderProfileWrapper.QUALITY_4KDCI, CamcorderProfileWrapper.QUALITY_TIME_LAPSE_4KDCI);
+       }
    }
 
    public static int getTimeLapseQualityFor(int quality) {
@@ -366,14 +385,18 @@ public class CameraSettings {
         VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_LOW  , CamcorderProfile.QUALITY_HIGH_SPEED_LOW  );
         VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_HIGH , CamcorderProfile.QUALITY_HIGH_SPEED_HIGH );
         VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_QCIF , -1 ); // does not exist
-        VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_CIF  , CamcorderProfile.QUALITY_HIGH_SPEED_CIF  );
+        VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_CIF  , CamcorderProfileWrapper.QUALITY_HIGH_SPEED_CIF  );
         VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_480P , CamcorderProfile.QUALITY_HIGH_SPEED_480P );
         VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_720P , CamcorderProfile.QUALITY_HIGH_SPEED_720P );
         VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_1080P, CamcorderProfile.QUALITY_HIGH_SPEED_1080P);
         VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_QVGA , -1 ); // does not exist
         VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_2160P, CamcorderProfile.QUALITY_HIGH_SPEED_2160P);
-        VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_VGA  , CamcorderProfile.QUALITY_HIGH_SPEED_VGA  );
-        VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfile.QUALITY_4KDCI, CamcorderProfile.QUALITY_HIGH_SPEED_4KDCI);
+       if ( CamcorderProfileWrapper.QUALITY_VGA != -1 ) {
+           VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfileWrapper.QUALITY_VGA, CamcorderProfileWrapper.QUALITY_HIGH_SPEED_VGA);
+       }
+       if ( CamcorderProfileWrapper.QUALITY_4KDCI != -1 ) {
+           VIDEO_QUALITY_TO_HIGHSPEED.put(CamcorderProfileWrapper.QUALITY_4KDCI, CamcorderProfileWrapper.QUALITY_HIGH_SPEED_4KDCI);
+       }
    } 
 
    public static int getHighSpeedQualityFor(int quality) {
@@ -854,16 +877,16 @@ public class CameraSettings {
 
         if (touchAfAec != null) {
             filterUnsupportedOptions(group,
-                    touchAfAec, mParameters.getSupportedTouchAfAec());
+                    touchAfAec, ParametersWrapper.getSupportedTouchAfAec(mParameters));
         }
 
-        if (!mParameters.isPowerModeSupported() && powerMode != null) {
+        if (!ParametersWrapper.isPowerModeSupported(mParameters) && powerMode != null) {
             removePreference(group, powerMode.getKey());
         }
 
         if (selectableZoneAf != null) {
             filterUnsupportedOptions(group,
-                    selectableZoneAf, mParameters.getSupportedSelectableZoneAf());
+                    selectableZoneAf, ParametersWrapper.getSupportedSelectableZoneAf(mParameters));
         }
 
         if (saturation != null && !CameraUtil.isSupported(mParameters, "saturation") &&
@@ -883,22 +906,22 @@ public class CameraSettings {
 
         if (mIso != null) {
             filterUnsupportedOptions(group,
-                    mIso, getSupportedIsoValues(mParameters));
+                    mIso, ParametersWrapper.getSupportedIsoValues(mParameters));
         }
 
         if (redeyeReduction != null) {
             filterUnsupportedOptions(group,
-                    redeyeReduction, mParameters.getSupportedRedeyeReductionModes());
+                    redeyeReduction, ParametersWrapper.getSupportedRedeyeReductionModes(mParameters));
         }
 
         if (denoise != null) {
             filterUnsupportedOptions(group,
-                    denoise, mParameters.getSupportedDenoiseModes());
+                    denoise, ParametersWrapper.getSupportedDenoiseModes(mParameters));
         }
 
         if (videoHdr != null) {
             filterUnsupportedOptions(group,
-                    videoHdr, mParameters.getSupportedVideoHDRModes());
+                    videoHdr, ParametersWrapper.getSupportedVideoHDRModes(mParameters));
         }
 
         if (colorEffect != null) {
@@ -928,7 +951,7 @@ public class CameraSettings {
 
         if (autoExposure != null) {
             filterUnsupportedOptions(group,
-                    autoExposure, mParameters.getSupportedAutoexposure());
+                    autoExposure, ParametersWrapper.getSupportedAutoexposure(mParameters));
         }
 
         if(videoSnapSize != null) {
@@ -942,7 +965,7 @@ public class CameraSettings {
 
         if (histogram!= null) {
             filterUnsupportedOptions(group,
-                    histogram, mParameters.getSupportedHistogramModes());
+                    histogram, ParametersWrapper.getSupportedHistogramModes(mParameters));
         }
 
         if (pictureFormat!= null) {
@@ -960,7 +983,7 @@ public class CameraSettings {
 
         if (videoRotation != null) {
             filterUnsupportedOptions(group,
-                    videoRotation, mParameters.getSupportedVideoRotationValues());
+                    videoRotation, ParametersWrapper.getSupportedVideoRotationValues(mParameters));
         }
 
         if (manualFocus != null) {
@@ -981,6 +1004,16 @@ public class CameraSettings {
         if (zoomLevel != null) {
             filterUnsupportedOptions(group,
                     zoomLevel, getSupportedZoomLevel(mParameters));
+        }
+
+        if ( zsl != null ) {
+            filterUnsupportedOptions(group,
+                    zsl, ParametersWrapper.getSupportedZSLModes(mParameters));
+        }
+
+        if ( faceDetection != null ) {
+            filterUnsupportedOptions(group,
+                    faceDetection, ParametersWrapper.getSupportedFaceDetectionModes(mParameters));
         }
     }
 
@@ -1056,6 +1089,8 @@ public class CameraSettings {
                         supportedAdvancedFeatures)) {
                 removePreference(group, chromaFlash.getKey());
             }
+            //remove chromaFlash
+            removePreference(group, chromaFlash.getKey());
         }
 
         if (sceneMode != null) {
@@ -1116,7 +1151,7 @@ public class CameraSettings {
             removePreference(group, cameraHdrPlus.getKey());
         }
 
-        if (SystemProperties.getBoolean("persist.env.camera.saveinsd", false)) {
+        if (PersistUtil.isSaveInSdEnabled()) {
             final String CAMERA_SAVEPATH_SDCARD = "1";
             final int CAMERA_SAVEPATH_SDCARD_IDX = 1;
             final int CAMERA_SAVEPATH_PHONE_IDX = 0;
@@ -1481,9 +1516,9 @@ public class CameraSettings {
     private static void getFineResolutionQuality(ArrayList<String> supported,
                                                  int cameraId,Parameters parameters) {
 
-        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_4KDCI)) {
+        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfileWrapper.QUALITY_4KDCI)) {
            if (checkSupportedVideoQuality(parameters,4096,2160)) {
-              supported.add(Integer.toString(CamcorderProfile.QUALITY_4KDCI));
+              supported.add(Integer.toString(CamcorderProfileWrapper.QUALITY_4KDCI));
            }
         }
 
@@ -1508,9 +1543,9 @@ public class CameraSettings {
            }
         }
 
-        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfile.QUALITY_VGA)) {
+        if (CamcorderProfile.hasProfile(cameraId, CamcorderProfileWrapper.QUALITY_VGA)) {
            if (checkSupportedVideoQuality(parameters,640,480)){
-              supported.add(Integer.toString(CamcorderProfile.QUALITY_VGA));
+              supported.add(Integer.toString(CamcorderProfileWrapper.QUALITY_VGA));
            }
         }
 

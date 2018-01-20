@@ -42,4 +42,6 @@
     <color name="material_bg_opaque_settings">#60000000</color>
     <color name="material_text">#4CAF50</color> <!-- text color in settings/menu -->
     <color name="transparent">@android:color/transparent</color>
+
+    <color name="ic_launcher_background">#68be6c</color>
 </resources>

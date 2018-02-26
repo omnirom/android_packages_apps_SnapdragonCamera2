@@ -50,12 +50,12 @@ public class PersistUtil {
             SystemProperties.getInt("persist.vendor.camera.longshot.shotnum", 50);
     private static final String PERSIST_CAMERA_PREVIEW_SIZE =
             SystemProperties.get("persist.vendor.camera.preview.size", "");
+    private static final String PERSIST_CAMERA_VIDEO_SIZE =
+            SystemProperties.get("persist.vendor.camera.video.size", "");
     private static final boolean PERSIST_CAMERA_CAMERA2 =
             SystemProperties.getBoolean("persist.vendor.camera.camera2", true);
     private static final boolean PERSIST_CAMERA_ZSL =
             SystemProperties.getBoolean("persist.vendor.camera.zsl.disabled", false);
-    private static final int PERSIST_CAMERA2_DEBUG =
-            SystemProperties.getInt("persist.vendor.camera2.debug", 0);
     private static final int PERSIST_CAMERA_CANCEL_TOUCHFOCUS_DELAY =
             SystemProperties.getInt("persist.vendor.camera.focus_delay", 5000);
     private static final int PERSIST_CAMERA_DEBUG =
@@ -141,6 +141,19 @@ public class PersistUtil {
         Point result = null;
         if (PERSIST_CAMERA_PREVIEW_SIZE != null) {
             String[] sourceStrArray = PERSIST_CAMERA_PREVIEW_SIZE.split("x");
+            if (sourceStrArray != null && sourceStrArray.length >= 2) {
+                result = new Point();
+                result.x = Integer.parseInt(sourceStrArray[0]);
+                result.y = Integer.parseInt(sourceStrArray[1]);
+            }
+        }
+        return result;
+    }
+
+    public static Point getCameraVideoSize() {
+        Point result = null;
+        if (PERSIST_CAMERA_VIDEO_SIZE != null) {
+            String[] sourceStrArray = PERSIST_CAMERA_VIDEO_SIZE.split("x");
             if (sourceStrArray != null && sourceStrArray.length >= 2) {
                 result = new Point();
                 result.x = Integer.parseInt(sourceStrArray[0]);

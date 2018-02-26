@@ -57,6 +57,7 @@ import com.android.camera.imageprocessor.filter.SharpshooterFilter;
 import com.android.camera.imageprocessor.filter.StillmoreFilter;
 import com.android.camera.imageprocessor.filter.TrackingFocusFrameListener;
 import com.android.camera.imageprocessor.filter.UbifocusFilter;
+import com.android.camera.imageprocessor.filter.DeepZoomFilter;
 import com.android.camera.ui.ListMenu;
 import com.android.camera.ui.PanoCaptureProcessView;
 import com.android.camera.ui.TrackingFocusRenderer;
@@ -98,6 +99,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final int SCENE_MODE_SHARPSHOOTER_INT = SCENE_MODE_CUSTOM_START + 7;
     public static final int SCENE_MODE_TRACKINGFOCUS_INT = SCENE_MODE_CUSTOM_START + 8;
     public static final int SCENE_MODE_PROMODE_INT = SCENE_MODE_CUSTOM_START + 9;
+    public static final int SCENE_MODE_DEEPZOOM_INT = SCENE_MODE_CUSTOM_START + 10;
     public static final String SCENE_MODE_DUAL_STRING = "100";
     public static final String KEY_CAMERA_SAVEPATH = "pref_camera2_savepath_key";
     public static final String KEY_RECORD_LOCATION = "pref_camera2_recordlocation_key";
@@ -156,6 +158,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_MANUAL_EXPOSURE_VALUE = "pref_camera2_manual_exposure_key";
     public static final String KEY_QCFA = "pref_camera2_qcfa_key";
     public static final String KEY_EIS_VALUE = "pref_camera2_eis_key";
+    public static final String KEY_FOVC_VALUE = "pref_camera2_fovc_key";
 
     public static final HashMap<String, Integer> KEY_ISO_INDEX = new HashMap<String, Integer>();
     public static final String KEY_BSGC_DETECTION = "pref_camera2_bsgc_key";
@@ -485,6 +488,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
         }
     }
 
+    public int[] getSensorModeTable(final int cameraId) {
+        int[] sensorModeTable = null;
+        try {
+            sensorModeTable = mCharacteristics.get(cameraId).get(CaptureModule.sensorModeTable);
+        } catch (IllegalArgumentException exception) {
+            exception.printStackTrace();
+        }
+        return sensorModeTable;
+    }
+
     public void registerListener(Listener listener) {
         mListeners.add(listener);
     }
@@ -591,9 +604,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public CharSequence[] getEntries(String key) {
-        ListPreference pref = mPreferenceGroup.findPreference(key);
-        if (pref != null) {
-            return pref.getEntries();
+        if ( mPreferenceGroup != null ) {
+            ListPreference pref = mPreferenceGroup.findPreference(key);
+            if (pref != null) {
+                return pref.getEntries();
+            }
         }
         return null;
     }
@@ -1152,12 +1167,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return maxAfRegions != null && maxAfRegions > 0;
     }
 
-    public boolean isHdrScene(int id) {
-        Integer hdrScene = mCharacteristics.get(id).get(
-                CaptureModule.isHdrScene);
-        return hdrScene != null && hdrScene == 1;
-    }
-
     public boolean isFixedFocus(int id) {
         Float focusDistance = mCharacteristics.get(id).get(CameraCharacteristics
                 .LENS_INFO_MINIMUM_FOCUS_DISTANCE);
@@ -1330,6 +1339,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (BlurbusterFilter.isSupportedStatic()) modes.add(SCENE_MODE_BLURBUSTER_INT + "");
         if (SharpshooterFilter.isSupportedStatic()) modes.add(SCENE_MODE_SHARPSHOOTER_INT + "");
         if (TrackingFocusFrameListener.isSupportedStatic()) modes.add(SCENE_MODE_TRACKINGFOCUS_INT + "");
+        if (DeepZoomFilter.isSupportedStatic()) modes.add(SCENE_MODE_DEEPZOOM_INT + "");
         modes.add("" + SCENE_MODE_PROMODE_INT);
         for (int mode : sceneModes) {
             modes.add("" + mode);
@@ -1500,7 +1510,8 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean getQcfaPrefEnabled() {
-        String qcfa = getValue(KEY_QCFA);
+        ListPreference qcfaPref = mPreferenceGroup.findPreference(KEY_QCFA);
+        String qcfa = qcfaPref.getValue();
         if(qcfa != null && qcfa.equals("enable")) {
             return true;
         }

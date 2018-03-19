@@ -52,6 +52,7 @@ import com.android.camera.imageprocessor.filter.BeautificationFilter;
 import com.android.camera.imageprocessor.filter.BestpictureFilter;
 import com.android.camera.imageprocessor.filter.BlurbusterFilter;
 import com.android.camera.imageprocessor.filter.ChromaflashFilter;
+import com.android.camera.imageprocessor.filter.DeepPortraitFilter;
 import com.android.camera.imageprocessor.filter.OptizoomFilter;
 import com.android.camera.imageprocessor.filter.SharpshooterFilter;
 import com.android.camera.imageprocessor.filter.StillmoreFilter;
@@ -100,7 +101,10 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final int SCENE_MODE_TRACKINGFOCUS_INT = SCENE_MODE_CUSTOM_START + 8;
     public static final int SCENE_MODE_PROMODE_INT = SCENE_MODE_CUSTOM_START + 9;
     public static final int SCENE_MODE_DEEPZOOM_INT = SCENE_MODE_CUSTOM_START + 10;
+	public static final int SCENE_MODE_DEEPPORTRAIT_INT = SCENE_MODE_CUSTOM_START + 11;
     public static final String SCENE_MODE_DUAL_STRING = "100";
+    public static final String SCENE_MODE_SUNSET_STRING = "10";
+    public static final String SCENE_MODE_LANDSCAPE_STRING = "4";
     public static final String KEY_CAMERA_SAVEPATH = "pref_camera2_savepath_key";
     public static final String KEY_RECORD_LOCATION = "pref_camera2_recordlocation_key";
     public static final String KEY_JPEG_QUALITY = "pref_camera2_jpegquality_key";
@@ -160,6 +164,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_QCFA = "pref_camera2_qcfa_key";
     public static final String KEY_EIS_VALUE = "pref_camera2_eis_key";
     public static final String KEY_FOVC_VALUE = "pref_camera2_fovc_key";
+    public static final String KEY_DEEPPORTRAIT_VALUE = "pref_camera2_deepportrait_key";
 
     public static final HashMap<String, Integer> KEY_ISO_INDEX = new HashMap<String, Integer>();
     public static final String KEY_BSGC_DETECTION = "pref_camera2_bsgc_key";
@@ -1229,12 +1234,20 @@ public class SettingsManager implements ListMenu.SettingsListener {
         Size[] sizes = map.getOutputSizes(ImageFormat.JPEG);
         List<String> res = new ArrayList<>();
 
+        boolean isDeepportrait = getDeepportraitEnabled();
+
         if (getQcfaPrefEnabled() && getIsSupportedQcfa(cameraId)) {
             res.add(getSupportedQcfaDimension(cameraId));
         }
 
         if (sizes != null) {
             for (int i = 0; i < sizes.length; i++) {
+                if (isDeepportrait &&
+                        (Math.min(sizes[i].getWidth(),sizes[i].getHeight()) < 720 ||
+                        Math.max(sizes[i].getWidth(),sizes[i].getHeight()) <= 1024)) {
+                    //some reslutions are not supported in deepportrait
+                    continue;
+                }
                 res.add(sizes[i].toString());
             }
         }
@@ -1352,7 +1365,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         if (BlurbusterFilter.isSupportedStatic()) modes.add(SCENE_MODE_BLURBUSTER_INT + "");
         if (SharpshooterFilter.isSupportedStatic()) modes.add(SCENE_MODE_SHARPSHOOTER_INT + "");
         if (TrackingFocusFrameListener.isSupportedStatic()) modes.add(SCENE_MODE_TRACKINGFOCUS_INT + "");
-        if (DeepZoomFilter.isSupportedStatic()) modes.add(SCENE_MODE_DEEPZOOM_INT + "");
+        if (DeepPortraitFilter.isSupportedStatic()) modes.add(SCENE_MODE_DEEPPORTRAIT_INT+"");
         modes.add("" + SCENE_MODE_PROMODE_INT);
         for (int mode : sceneModes) {
             modes.add("" + mode);
@@ -1372,11 +1385,6 @@ public class SettingsManager implements ListMenu.SettingsListener {
 
     private boolean isFlashAvailable(int cameraId) {
         return mCharacteristics.get(cameraId).get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-    }
-
-    public StreamConfigurationMap getStreamConfigurationMap(int cameraId){
-        return mCharacteristics.get(cameraId)
-                .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
     }
 
     public List<String> getSupportedColorEffects(int cameraId) {
@@ -1523,9 +1531,16 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean getQcfaPrefEnabled() {
-        ListPreference qcfaPref = mPreferenceGroup.findPreference(KEY_QCFA);
-        String qcfa = qcfaPref.getValue();
+        String qcfa = getValue(KEY_QCFA);
         if(qcfa != null && qcfa.equals("enable")) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean getDeepportraitEnabled() {
+        String dp = getValue(KEY_SCENE_MODE);
+        if( dp!= null && Integer.valueOf(dp) == SCENE_MODE_DEEPPORTRAIT_INT) {
             return true;
         }
         return false;
@@ -1634,7 +1649,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public boolean isZSLInAppEnabled(){
         String value = getValue(KEY_ZSL);
         String appZSLValue = mContext.getString(R.string.pref_camera2_zsl_entryvalue_app_zsl);
-        if ( value != null && value.equals(appZSLValue) ){
+        if ( (value != null && value.equals(appZSLValue)) ||
+                SettingsManager.SCENE_MODE_SUNSET_STRING.equals(
+                        SettingsManager.getInstance().getValue(SettingsManager.KEY_SCENE_MODE)) ||
+                SettingsManager.SCENE_MODE_LANDSCAPE_STRING.equals(
+                        SettingsManager.getInstance().getValue(SettingsManager.KEY_SCENE_MODE))){
             return true;
         }else{
             return false;

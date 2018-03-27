@@ -85,6 +85,7 @@ import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.Toast;
 import android.graphics.Paint;
@@ -844,6 +845,14 @@ public class CaptureModule implements CameraModule, PhotoController,
                 Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
                 Log.d(TAG, "STATE_WAITING_AF_AE_LOCK id: " + id + " afState: " + afState +
                         " aeState:" + aeState);
+
+                if ((aeState == null || aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED)) {
+                    if (isFlashOn(id)) {
+                        // if flash is on and AE state is CONVERGED then lock AE
+                        lockExposure(id);
+                    }
+                }
+
                 if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState &&
                         (aeState == null || aeState == CaptureResult.CONTROL_AE_STATE_LOCKED)) {
                     checkAfAeStatesAndCapture(id);
@@ -969,6 +978,9 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public static int getQualityNumber(String jpegQuality) {
+        if (jpegQuality == null) {
+            return 85;
+        }
         try {
             int qualityPercentile = Integer.parseInt(jpegQuality);
             if (qualityPercentile >= 0 && qualityPercentile <= 100)
@@ -1151,6 +1163,38 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         }
     }
+
+    public class DetachClickListener implements DialogInterface.OnClickListener {
+
+        private DialogInterface.OnClickListener mDelegate;
+
+        public DetachClickListener(DialogInterface.OnClickListener delegate) {
+            this.mDelegate = delegate;
+        }
+
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            if (mDelegate != null) {
+                mDelegate.onClick(dialog, which);
+            }
+        }
+
+        public void clearOnDetach(AlertDialog dialog) {
+            dialog.getWindow()
+                    .getDecorView()
+                    .getViewTreeObserver()
+                    .addOnWindowAttachListener(new ViewTreeObserver.OnWindowAttachListener() {
+                        @Override
+                        public void onWindowAttached() {
+                        }
+
+                        @Override
+                        public void onWindowDetached() {
+                            mDelegate = null;
+                        }
+                    });
+        }
+    }
     private void createSession(final int id) {
         if (mPaused || !mCameraOpened[id]) return;
         Log.d(TAG, "createSession " + id);
@@ -1213,18 +1257,22 @@ public class CaptureModule implements CameraModule, PhotoController,
                             if (mActivity.isFinishing()) {
                                 return;
                             }
-                            new AlertDialog.Builder(mActivity)
-                                    .setTitle("Camera Initialization Failed")
-                                    .setMessage("Closing SnapdragonCamera")
-                                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            DetachClickListener detachClickListener = new DetachClickListener(
+                                    new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int which) {
                                             closeCamera();
                                             mActivity.finish();
                                         }
-                                    })
+                                    }
+                            );
+                            AlertDialog dialog = new AlertDialog.Builder(mActivity)
+                                    .setTitle("Camera Initialization Failed")
+                                    .setMessage("Closing SnapdragonCamera")
+                                    .setPositiveButton(android.R.string.yes, detachClickListener)
                                     .setCancelable(false)
                                     .setIcon(android.R.drawable.ic_dialog_alert)
                                     .show();
+                            detachClickListener.clearOnDetach(dialog);
                         }
 
                         @Override
@@ -1364,8 +1412,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             if (mCaptureSession[id] instanceof CameraConstrainedHighSpeedCaptureSession) {
                 CameraConstrainedHighSpeedCaptureSession session =
                         (CameraConstrainedHighSpeedCaptureSession) mCaptureSession[id];
-                List requestList = session.createHighSpeedRequestList(
-                        mPreviewRequestBuilder[id].build());
+                List requestList = CameraUtil.createHighSpeedRequestList(mVideoRequestBuilder.build());
                 session.setRepeatingBurst(requestList, mCaptureCallback, mCameraHandler);
             } else {
                 mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id]
@@ -1641,10 +1688,13 @@ public class CaptureModule implements CameraModule, PhotoController,
             mLockRequestHashCode[id] = request.hashCode();
             mCaptureSession[id].capture(request, mCaptureCallback, mCameraHandler);
 
-            // lock AE
-            applySettingsForLockExposure(mPreviewRequestBuilder[id], id);
-            mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id].build(),
-                    mCaptureCallback, mCameraHandler);
+            // if flash is on, does not lock AE until the AE state is CONTROL_AE_STATE_CONVERGED.
+            // if flash is off, lock AE now.
+            if (!isFlashOn(id)) {
+                applySettingsForLockExposure(mPreviewRequestBuilder[id], id);
+                mCaptureSession[id].setRepeatingRequest(mPreviewRequestBuilder[id].build(),
+                        mCaptureCallback, mCameraHandler);
+            }
 
             if(mHiston) {
                 updateGraghViewVisibility(View.INVISIBLE);
@@ -1790,7 +1840,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             applySettingsForJpegInformation(captureBuilder, id);
             applyAFRegions(captureBuilder, id);
             applyAERegions(captureBuilder, id);
-            if (!mIsSupportedQcfa || !isDeepZoom()) {
+            if (!(mIsSupportedQcfa || isDeepZoom())) {
                 addPreviewSurface(captureBuilder, null, id);
             }
             VendorTagUtil.setCdsMode(captureBuilder, 2);// CDS 0-OFF, 1-ON, 2-AUTO
@@ -3692,7 +3742,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         CameraConstrainedHighSpeedCaptureSession session =
                                     (CameraConstrainedHighSpeedCaptureSession) mCurrentSession;
                         try {
-                            List list = session 
+                            List list = CameraUtil
                                     .createHighSpeedRequestList(mVideoRequestBuilder.build());
                             session.setRepeatingBurst(list, mCaptureCallback, mCameraHandler);
                         } catch (CameraAccessException e) {
@@ -3845,7 +3895,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         mVideoPausePreviewRequestBuilder.addTarget(surface);
         mVideoPausePreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
         if (mHighSpeedCapture) {
-            mVideoRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+            mVideoPausePreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
                     mHighSpeedFPSRange);
         }
         if (!mHighSpeedCapture || !((int)mHighSpeedFPSRange.getUpper() > NORMAL_SESSION_MAX_FPS)) {
@@ -4049,17 +4099,14 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setEndOfStream(boolean isResume, boolean isStopRecord) {
+        CaptureRequest.Builder captureRequestBuilder = null;
         try {
             if (isResume) {
-                mVideoRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
-                if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
-                    List requestList = ((CameraConstrainedHighSpeedCaptureSession)mCurrentSession)
-                            .createHighSpeedRequestList(mVideoRequestBuilder.build());
-                    mCurrentSession.setRepeatingBurst(requestList,
-                            mCaptureCallback, mCameraHandler);
-                } else {
-                    mCurrentSession.setRepeatingRequest(mVideoRequestBuilder.build(),
-                            mCaptureCallback, mCameraHandler);
+                captureRequestBuilder = mVideoRequestBuilder;
+                try {
+                    captureRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x00);
+                } catch(IllegalArgumentException illegalArgumentException) {
+                    Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
                 }
             } else {
                 // is pause or stopRecord
@@ -4068,11 +4115,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                     CaptureRequest.Builder builder =
                             mCameraDevice[getMainCameraId()].createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
                     builder.setTag(getMainCameraId());
+                    if (mHighSpeedCapture) {
+                        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mHighSpeedFPSRange);
+                    }
                     addPreviewSurface(builder, null, getMainCameraId());
-                    builder.set(CaptureModule.recording_end_stream, (byte) 0x01);
+                    try {
+                        builder.set(CaptureModule.recording_end_stream, (byte) 0x01);
+                    } catch (IllegalArgumentException illegalArgumentException) {
+                        Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
+                    }
                     if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
-                        List requestList = ((CameraConstrainedHighSpeedCaptureSession)mCurrentSession).
-                                createHighSpeedRequestList(builder.build());
+                        List requestList = CameraUtil.createHighSpeedRequestList(builder.build());
                         mCurrentSession.captureBurst(requestList, mCaptureCallback, mCameraHandler);
                     } else {
                         mCurrentSession.capture(builder.build(), mCaptureCallback, mCameraHandler);
@@ -4081,51 +4134,24 @@ public class CaptureModule implements CameraModule, PhotoController,
                 if (!isStopRecord) {
                     //is pause record
                     mMediaRecorder.pause();
-                    if (mVideoPausePreviewRequestBuilder != null) {
-                        if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
-                            List requestList = ((CameraConstrainedHighSpeedCaptureSession)mCurrentSession)
-                                    .createHighSpeedRequestList(mVideoPausePreviewRequestBuilder.build());
-                            mCurrentSession.setRepeatingBurst(requestList,
-                                    mCaptureCallback, mCameraHandler);
-                        } else {
-                            mCurrentSession.setRepeatingRequest(
-                                    mVideoPausePreviewRequestBuilder.build(),
-                                    mCaptureCallback, mCameraHandler);
-                        }
-                    } else {
-                        //if failed to set up preview builder, stop recording
-                        stopRecordingVideo(getMainCameraId());
-                    }
+                    captureRequestBuilder = mVideoPausePreviewRequestBuilder;
                 }
             }
-        } catch (CameraAccessException | IllegalArgumentException e) {
-            if (e instanceof CameraAccessException) {
-                Log.w(TAG, "setEndOfStream, Camera access failed");
-            }
-            if (e instanceof IllegalArgumentException) {
-                Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
-            }
-            if (!isStopRecord && !isResume) {
-                mMediaRecorder.pause();
-                try {
-                    if (mVideoPausePreviewRequestBuilder != null) {
-                        if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
-                            List requestList = ((CameraConstrainedHighSpeedCaptureSession)mCurrentSession)
-                                    .createHighSpeedRequestList(mVideoPausePreviewRequestBuilder.build());
-                            mCurrentSession.setRepeatingBurst(requestList,
-                                    mCaptureCallback, mCameraHandler);
-                        } else {
-                            mCurrentSession.setRepeatingRequest(mVideoPausePreviewRequestBuilder
-                                    .build(), mCaptureCallback, mCameraHandler);
-                        }
-                    } else {
-                        //if failed to set up preview builder, stop recording
-                        stopRecordingVideo(getMainCameraId());
-                    }
-                } catch (CameraAccessException exception) {
-                    Log.w(TAG, "setEndOfStream, Camera access failed");
+
+            // set preview
+            if (captureRequestBuilder != null) {
+                if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
+                    List requestList = CameraUtil.createHighSpeedRequestList(captureRequestBuilder.build());
+                    mCurrentSession.setRepeatingBurst(requestList,
+                            mCaptureCallback, mCameraHandler);
+                } else {
+                    mCurrentSession.setRepeatingRequest(captureRequestBuilder.build(),
+                            mCaptureCallback, mCameraHandler);
                 }
             }
+        } catch (CameraAccessException e) {
+            stopRecordingVideo(getMainCameraId());
+            e.printStackTrace();
         }
     }
 
@@ -4858,7 +4884,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             } else {
                 CameraCaptureSession session = mCaptureSession[id];
                 if (session instanceof CameraConstrainedHighSpeedCaptureSession) {
-                    List list = ((CameraConstrainedHighSpeedCaptureSession)session)
+                    List list = CameraUtil
                             .createHighSpeedRequestList(mPreviewRequestBuilder[id].build());
                     ((CameraConstrainedHighSpeedCaptureSession) session).setRepeatingBurst(list
                             , mCaptureCallback, mCameraHandler);

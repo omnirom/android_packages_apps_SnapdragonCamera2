@@ -77,6 +77,7 @@ import com.android.camera.ui.CountDownView;
 import com.android.camera.ui.FlashToggleButton;
 import com.android.camera.ui.FocusIndicator;
 import com.android.camera.ui.PieRenderer;
+import com.android.camera.ui.ProMode;
 import com.android.camera.ui.RenderOverlay;
 import com.android.camera.ui.RotateImageView;
 import com.android.camera.ui.RotateLayout;
@@ -1542,9 +1543,17 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
             return mTrackingFocusRenderer;
         }
+        FocusIndicator focusIndicator;
+        if (mFaceView != null && mFaceView.faceExists() && !mIsTouchAF) {
+            if (mPieRenderer != null) {
+                mPieRenderer.clear();
+            }
+            focusIndicator = mFaceView;
+        } else {
+            focusIndicator = mPieRenderer;
+        }
 
-        return (mFaceView != null && mFaceView.faceExists() && !mIsTouchAF) ?
-                mFaceView : mPieRenderer;
+        return focusIndicator;
     }
 
     @Override
@@ -1597,14 +1606,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void resumeFaceDetection() {
     }
 
-    public void onStartFaceDetection(int orientation, boolean mirror, Rect cameraBound) {
+    public void onStartFaceDetection(int orientation, boolean mirror, Rect cameraBound,
+                                     Rect originalCameraBound) {
         mFaceView.setBlockDraw(false);
         mFaceView.clear();
         mFaceView.setVisibility(View.VISIBLE);
         mFaceView.setDisplayOrientation(orientation);
         mFaceView.setMirror(mirror);
         mFaceView.setCameraBound(cameraBound);
-        mFaceView.setOriginalCameraBound(cameraBound);
+        mFaceView.setOriginalCameraBound(originalCameraBound);
         mFaceView.setZoom(mModule.getZoomValue());
         mFaceView.resume();
     }
@@ -1833,6 +1843,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 }
             }else if(state.key.equals(SettingsManager.KEY_FLASH_MODE) ) {
                 enableView(mFlashButton, SettingsManager.KEY_FLASH_MODE);
+            }else if (state.key.equals(SettingsManager.KEY_FOCUS_DISTANCE)) {
+                if (mPieRenderer != null)
+                    mPieRenderer.setVisible(false);
             }
         }
     }

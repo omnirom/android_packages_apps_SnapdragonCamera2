@@ -902,12 +902,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         mCaptureHDRTestEnable = false;
     }
 
-    public void startFaceDetection() {
-            mUI.onStartFaceDetection(mDisplayOrientation,
-                    mSettingsManager.isFacingFront(getMainCameraId()),
-                    mSettingsManager.getSensorActiveArraySize(getMainCameraId()));
-    }
-
     private boolean canStartMonoPreview() {
         return getCameraMode() == MONO_MODE ||
                 (getCameraMode() == DUAL_MODE && isMonoPreviewOn());
@@ -1088,6 +1082,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private void applyFocusDistance(CaptureRequest.Builder builder, String value) {
         if (value == null) return;
         float valueF = Float.valueOf(value);
+        if (valueF < 0) return;
         builder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_OFF);
         builder.set(CaptureRequest.LENS_FOCUS_DISTANCE, valueF);
     }
@@ -2013,7 +2008,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                 public void onCaptureSequenceCompleted(CameraCaptureSession session, int
                         sequenceId, long frameNumber) {
                     Log.d(TAG, "captureStillPictureForCommon onCaptureSequenceCompleted: " + id);
-                    unlockFocus(id);
+                    if (mUI.getCurrentProMode() != ProMode.MANUAL_MODE) {
+                        unlockFocus(id);
+                    } else {
+                        enableShutterAndVideoOnUiThread(id);
+                    }
                 }
             }, mCaptureCallbackHandler);
         }
@@ -2271,18 +2270,21 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         try {
-            CaptureRequest.Builder builder = getRequestBuilder(id);
-            builder.setTag(id);
-            addPreviewSurface(builder, null, id);
+            if (mUI.getCurrentProMode() != ProMode.MANUAL_MODE) {
+                CaptureRequest.Builder builder = getRequestBuilder(id);
+                builder.setTag(id);
+                addPreviewSurface(builder, null, id);
+                applySettingsForUnlockFocus(builder, id);
+                mCaptureSession[id].capture(builder.build(), mCaptureCallback, mCameraHandler);
+            }
 
-            applySettingsForUnlockFocus(builder, id);
-            mCaptureSession[id].capture(builder.build(), mCaptureCallback, mCameraHandler);
             mState[id] = STATE_PREVIEW;
             if (id == getMainCameraId()) {
                 mActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mUI.clearFocus();
+                        if (mUI.getCurrentProMode() != ProMode.MANUAL_MODE)
+                            mUI.clearFocus();
                     }
                 });
             }
@@ -2295,20 +2297,24 @@ public class CaptureModule implements CameraModule, PhotoController,
             setAFModeToPreview(id, mUI.getCurrentProMode() == ProMode.MANUAL_MODE ?
                     CaptureRequest.CONTROL_AF_MODE_OFF : mControlAFMode);
             mTakingPicture[id] = false;
-            if (id == getMainCameraId()) {
-                mActivity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mUI.stopSelfieFlash();
-                        if (!mIsSupportedQcfa) {
-                            mUI.enableShutter(true);
-                        }
-                        mUI.enableVideo(true);
-                    }
-                });
-            }
+            enableShutterAndVideoOnUiThread(id);
         } catch (NullPointerException | IllegalStateException | CameraAccessException e) {
             Log.w(TAG, "Session is already closed");
+        }
+    }
+
+    private void enableShutterAndVideoOnUiThread(int id) {
+        if (id == getMainCameraId()) {
+            mActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mUI.stopSelfieFlash();
+                    if (!mIsSupportedQcfa) {
+                        mUI.enableShutter(true);
+                    }
+                    mUI.enableVideo(true);
+                }
+            });
         }
     }
 
@@ -2473,11 +2479,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         builder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                 CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START);
 
-        // For long shot, torch mode is used
-        if (!mLongshotActive) {
-            applyFlash(builder, id);
-        }
-
+        applyFlash(builder, id);
         applyCommonSettings(builder, id);
     }
 
@@ -4118,6 +4120,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     if (mHighSpeedCapture) {
                         builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mHighSpeedFPSRange);
                     }
+                    applyZoom(builder, getMainCameraId());
                     addPreviewSurface(builder, null, getMainCameraId());
                     try {
                         builder.set(CaptureModule.recording_end_stream, (byte) 0x01);
@@ -4866,7 +4869,13 @@ public class CaptureModule implements CameraModule, PhotoController,
                 break;
             case SettingsManager.KEY_FOCUS_DISTANCE:
                 updatePreview = true;
-                applyFocusDistance(mPreviewRequestBuilder[cameraId], value);
+                if (mUI.getCurrentProMode() == ProMode.MANUAL_MODE) {
+                    applyFocusDistance(mPreviewRequestBuilder[cameraId], value);
+                } else {
+                    //set AF mode when manual mode is off
+                    mPreviewRequestBuilder[cameraId].set(
+                            CaptureRequest.CONTROL_AF_MODE, mControlAFMode);
+                }
         }
         return updatePreview;
     }
@@ -4875,7 +4884,9 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (!checkSessionAndBuilder(mCaptureSession[id], mPreviewRequestBuilder[id])) {
             return;
         }
-        cancelTouchFocus(id);
+        if (mState[id] == STATE_PREVIEW) {
+            cancelTouchFocus(id);
+        }
         applyZoom(mPreviewRequestBuilder[id], id);
         try {
             if(id == MONO_ID && !canStartMonoPreview()) {
@@ -5508,6 +5519,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                 else {
                     mUI.onStartFaceDetection(mDisplayOrientation,
                             mSettingsManager.isFacingFront(getMainCameraId()),
+                            mCropRegion[getMainCameraId()],
                             mSettingsManager.getSensorActiveArraySize(getMainCameraId()));
                 }
             }

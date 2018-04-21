@@ -574,6 +574,8 @@ public class CameraUtil {
 
     public static int getOptimalPreviewSize(Activity currentActivity,
             Point[] sizes, double targetRatio) {
+        // TODO(andyhuibers): Don't hardcode this but use device's measurements.
+        final int MAX_ASPECT_HEIGHT = 1080;
         // Use a very small tolerance because we want an exact match.
         final double ASPECT_TOLERANCE = 0.01;
         if (sizes == null) return -1;
@@ -593,6 +595,9 @@ public class CameraUtil {
             Point size = sizes[i];
             double ratio = (double) size.x / size.y;
             if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
+
+            // Count sizes with height <= 1080p to mimic camera1 api behavior.
+            if (size.y > MAX_ASPECT_HEIGHT) continue;
 
             double heightDiff = Math.abs(size.y - targetHeight);
             if (heightDiff < minDiff) {
@@ -1398,7 +1403,10 @@ public class CameraUtil {
         // Request list size: to limit the preview to 30fps, need use maxFps/30; to maximize
         // the preview frame rate, should use maxBatch size for that high speed stream
         // configuration. We choose the former for now.
-        int requestListSize = fpsRange.getUpper() / 30;
+        int requestListSize = getHighSpeedVideoConfigsLists((int)request.getTag());
+        if (requestListSize == -1) {
+            requestListSize = fpsRange.getUpper() / 30;
+        }
         List<CaptureRequest> requestList = new ArrayList<CaptureRequest>();
 
         // Prepare the Request builders: need carry over the request controls.
@@ -1464,6 +1472,47 @@ public class CameraUtil {
         }
 
         return Collections.unmodifiableList(requestList);
+    }
+
+    private static int getHighSpeedVideoConfigsLists(int cameraId) {
+        int optimalSizeIndex = -1;
+        SettingsManager settingsManager = SettingsManager.getInstance();
+        int[] table = settingsManager.getHighSpeedVideoConfigs(cameraId);
+        if (table == null) {
+            Log.w(TAG, " getHighSpeedVideoConfigsLists is  null");
+            return optimalSizeIndex;
+        }
+        String videoSizeString = settingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        if (videoSizeString == null) {
+            Log.w(TAG, " KEY_VIDEO_QUALITY is null");
+            return optimalSizeIndex;
+        }
+        android.util.Size videoSize = parsePictureSize(videoSizeString);
+        String rateValue = settingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        if (rateValue == null || rateValue.substring(0, 3).equals("off")) {
+            Log.w(TAG, " KEY_VIDEO_HIGH_FRAME_RATE is null");
+            return optimalSizeIndex;
+        }
+        int frameRate = Integer.parseInt(rateValue.substring(3));
+        for (int i = 0; i < table.length; i += 5) {
+            if (table[i] == videoSize.getWidth()
+                    && table[i + 1] == videoSize.getHeight()
+                    && (table[i + 2] == frameRate
+                    || table[i + 3] == frameRate)) {
+                if (i != table.length) {
+                    optimalSizeIndex = table[i + 4];
+                    return optimalSizeIndex;
+                }
+            }
+        }
+        return optimalSizeIndex;
+    }
+
+    private static android.util.Size parsePictureSize(String value) {
+        int indexX = value.indexOf('x');
+        int width = Integer.parseInt(value.substring(0, indexX));
+        int height = Integer.parseInt(value.substring(indexX + 1));
+        return new android.util.Size(width, height);
     }
 
     private static CaptureRequest.Builder constructorCaptureRequestBuilder (

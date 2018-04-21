@@ -206,6 +206,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final int LONGSHOT_CANCEL_THRESHOLD = 40 * 1024 * 1024;
 
     private static final int NORMAL_SESSION_MAX_FPS = 60;
+    private static final int HIGH_SESSION_MAX_FPS = 120;
 
     private static final int SCREEN_DELAY = 2 * 60 * 1000;
 
@@ -214,6 +215,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private static final int STREAM_CONFIG_MODE_QTIEIS_REALTIME = 0xF004;
     private static final int STREAM_CONFIG_MODE_QTIEIS_LOOKAHEAD = 0xF008;
     private static final int STREAM_CONFIG_MODE_FOVC = 0xF010;
+    private static final int STREAM_CONFIG_MODE_ZZHDR  = 0xF002;
 
     public static final boolean DEBUG =
             (PersistUtil.getCamera2Debug() == PersistUtil.CAMERA2_DEBUG_DUMP_LOG) ||
@@ -285,6 +287,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CameraCharacteristics.Key<>("org.quic.camera2.customhfrfps.info.CustomHFRFpsTable", int[].class);
     public static final CameraCharacteristics.Key<int[]> sensorModeTable  =
             new CameraCharacteristics.Key<>("org.quic.camera2.sensormode.info.SensorModeTable", int[].class);
+    public static final CameraCharacteristics.Key<int[]> highSpeedVideoConfigs  =
+            new CameraCharacteristics.Key<>("android.control.availableHighSpeedVideoConfigurations", int[].class);
 
     public static final CaptureRequest.Key<Integer> sharpness_control = new CaptureRequest.Key<>(
             "org.codeaurora.qcamera3.sharpness.strength", Integer.class);
@@ -581,9 +585,6 @@ public class CaptureModule implements CameraModule, PhotoController,
         Byte hdrScene = result.get(CaptureModule.isHdr);
         if (value == null || hdrScene == null) return;
         mAutoHdrEnable = false;
-        if (DEBUG) {
-            Log.d(TAG, "detectHDRMode: autoHdr is " + autoHdr + ",hdrScene is " + hdrScene);
-        }
         if (autoHdr != null && "enable".equals(autoHdr) && "0".equals(value) && hdrScene == 1) {
             mAutoHdrEnable = true;
             mActivity.runOnUiThread(new Runnable() {
@@ -1191,7 +1192,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
     private void createSession(final int id) {
-        if (mPaused || !mCameraOpened[id]) return;
+        if (mPaused || !mCameraOpened[id] || (mCameraDevice[id] == null)) return;
         Log.d(TAG, "createSession " + id);
         List<Surface> list = new LinkedList<Surface>();
         try {
@@ -1337,6 +1338,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         } catch (CameraAccessException e) {
         } catch (IllegalStateException e) {
             Log.v(TAG, "createSession: mPaused status occur Time out waiting for surface ");
+        } catch (NullPointerException e) {
+
         }
     }
 
@@ -2036,6 +2039,17 @@ public class CaptureModule implements CameraModule, PhotoController,
             applyZoom(captureBuilder, id);
 
             captureBuilder.addTarget(mVideoSnapshotImageReader.getSurface());
+            // send snapshot stream together with preview and video stream for snapshot request
+            // stream is the surface for the app
+            Surface surface = getPreviewSurfaceForSession(id);
+            if (getFrameProcFilterId().size() == 1 && getFrameProcFilterId().get(0) ==
+                    FrameProcessor.FILTER_MAKEUP) {
+                captureBuilder.addTarget(mFrameProcessor.getInputSurfaces().get(0));
+            } else {
+                captureBuilder.addTarget(surface);
+            }
+            List<Surface> surfaces = new ArrayList<>();
+            addPreviewSurface(captureBuilder, surfaces, id);
 
             mCurrentSession.capture(captureBuilder.build(),
                     new CameraCaptureSession.CaptureCallback() {
@@ -3784,10 +3798,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }, null);
             } else {
                 surfaces.add(mVideoSnapshotImageReader.getSurface());
-                setOpModeForVideoStream(cameraId);
+                String zzHDR = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_HDR_VALUE);
+                boolean zzHdrStatue = zzHDR.equals("1");
+                // if enable ZZHDR mode, don`t call the setOpModeForVideoStream method.
+                if (!zzHdrStatue) {
+                    setOpModeForVideoStream(cameraId);
+                }
                 String value = mSettingsManager.getValue(SettingsManager.KEY_FOVC_VALUE);
                 if (value != null && Boolean.parseBoolean(value)) {
                     mStreamConfigOptMode = mStreamConfigOptMode | STREAM_CONFIG_MODE_FOVC;
+                }
+                if (zzHdrStatue) {
+                    mStreamConfigOptMode = STREAM_CONFIG_MODE_ZZHDR;
                 }
                 if (DEBUG) {
                     Log.v(TAG, "createCustomCaptureSession mStreamConfigOptMode :"
@@ -4079,7 +4101,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         Log.v(TAG, "pauseVideoRecording");
         mMediaRecorderPausing = true;
         mRecordingTotalTime += SystemClock.uptimeMillis() - mRecordingStartTime;
-        setEndOfStream(false, false);
+        // As EIS is not supported for HFR case (>=120 )
+        // and FOVC also currently don’t require this for >=120 case
+        if (mHighSpeedCapture && ((int)mHighSpeedFPSRange.getUpper() >= HIGH_SESSION_MAX_FPS)) {
+            mMediaRecorder.pause();
+        } else {
+            setEndOfStream(false, false);
+        }
     }
 
     private void resumeVideoRecording() {
@@ -4114,24 +4142,18 @@ public class CaptureModule implements CameraModule, PhotoController,
                 // is pause or stopRecord
                 if (!(mMediaRecorderPausing && mStopRecPending)) {
                     mCurrentSession.stopRepeating();
-                    CaptureRequest.Builder builder =
-                            mCameraDevice[getMainCameraId()].createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
-                    builder.setTag(getMainCameraId());
-                    if (mHighSpeedCapture) {
-                        builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, mHighSpeedFPSRange);
-                    }
-                    applyZoom(builder, getMainCameraId());
-                    addPreviewSurface(builder, null, getMainCameraId());
                     try {
-                        builder.set(CaptureModule.recording_end_stream, (byte) 0x01);
+                        mVideoRequestBuilder.set(CaptureModule.recording_end_stream, (byte) 0x01);
                     } catch (IllegalArgumentException illegalArgumentException) {
                         Log.w(TAG, "can not find vendor tag: org.quic.camera.recording.endOfStream");
                     }
                     if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
-                        List requestList = CameraUtil.createHighSpeedRequestList(builder.build());
+                        List requestList = CameraUtil.createHighSpeedRequestList(
+                                mVideoRequestBuilder.build());
                         mCurrentSession.captureBurst(requestList, mCaptureCallback, mCameraHandler);
                     } else {
-                        mCurrentSession.capture(builder.build(), mCaptureCallback, mCameraHandler);
+                        mCurrentSession.capture(mVideoRequestBuilder.build(), mCaptureCallback,
+                                mCameraHandler);
                     }
                 }
                 if (!isStopRecord) {
@@ -4154,6 +4176,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
         } catch (CameraAccessException e) {
             stopRecordingVideo(getMainCameraId());
+            e.printStackTrace();
+        } catch (IllegalStateException e) {
             e.printStackTrace();
         }
     }
@@ -5051,9 +5075,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             request.set(CaptureRequest.SENSOR_SENSITIVITY, null);
             result = true;
         } else if (manualExposureMode.equals(userSetting)) {
+            mSettingsManager.setValue(SettingsManager.KEY_FLASH_MODE, "off");
             request.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
             request.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
-            mSettingsManager.setValue(SettingsManager.KEY_FLASH_MODE, "off");
             int isoValue = Integer.parseInt(pref.getString(SettingsManager.KEY_MANUAL_ISO_VALUE,
                     "100"));
             long newExpTime = -1;

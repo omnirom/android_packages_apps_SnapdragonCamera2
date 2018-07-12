@@ -115,8 +115,9 @@ public class OneUICameraControls extends RotatableLayout {
         setMeasureAllChildren(true);
         mPaint.setColor(getResources().getColor(R.color.camera_control_bg_opaque));
 
-        mTop = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 70, getResources().getDisplayMetrics());
-        mBottom = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, getResources().getDisplayMetrics());
+        int notchSize = context.getResources().getInteger(R.integer.notch_size);
+        mTop = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 70 + notchSize, getResources().getDisplayMetrics());
+        mBottom = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100 - notchSize, getResources().getDisplayMetrics());
         mVisible = true;
 
         Display display = ((Activity)context).getWindowManager().getDefaultDisplay();

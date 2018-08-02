@@ -16,6 +16,7 @@
 
 package com.android.camera;
 
+import android.hardware.camera2.CameraAccessException;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.view.Display;
@@ -1302,7 +1303,7 @@ public class CameraActivity extends Activity
     }
 
     private void unbindMediaSaveService() {
-        if (mConnection != null) {
+        if (mConnection != null && mMediaSaveService != null) {
             unbindService(mConnection);
         }
     }
@@ -1465,6 +1466,13 @@ public class CameraActivity extends Activity
 
         mContext = getApplicationContext();
 
+        try {
+            //Print version info here
+            String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            Log.d(TAG, "snapdragoncamera_version: " + versionName);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
         // Check if this is in the secure camera mode.
         Intent intent = getIntent();
         String action = intent.getAction();
@@ -1475,7 +1483,6 @@ public class CameraActivity extends Activity
         } else {
             mSecureCamera = intent.getBooleanExtra(SECURE_CAMERA_EXTRA, false);
         }
-
         if (mSecureCamera) {
             // Change the window flags so that secure camera can show when locked
             Window win = getWindow();
@@ -1542,14 +1549,10 @@ public class CameraActivity extends Activity
             }
         }
 
-        // Check if the device supports Camera API 2
-        mCamera2supported = CameraUtil.isCamera2Supported(mContext);
-        Log.d(TAG, "Camera API 2 supported: " + mCamera2supported);
-
-        mCamera2enabled = mCamera2supported && mContext.getResources().getBoolean(R.bool.support_camera_api_v2);
-        Log.d(TAG, "Camera API 2 enabled: " + mCamera2enabled);
-
-        if (mCamera2enabled && moduleIndex == ModuleSwitcher.PHOTO_MODULE_INDEX)
+        boolean cam2on = PersistUtil.getCamera2Mode();
+        CameraHolder.setCamera2Mode(this, cam2on);
+        if (cam2on && (moduleIndex == ModuleSwitcher.PHOTO_MODULE_INDEX ||
+                moduleIndex == ModuleSwitcher.VIDEO_MODULE_INDEX))
             moduleIndex = ModuleSwitcher.CAPTURE_MODULE_INDEX;
 
         mOrientationListener = new MyOrientationEventListener(this);
@@ -1805,6 +1808,11 @@ public class CameraActivity extends Activity
             finish();
             return;
         }
+        if (!cameraConnected()) {
+            super.onResume();
+            Log.v(TAG, "onResume: No camera devices connected.");
+            finish();
+        }
         SettingsManager settingsManager = SettingsManager.getInstance();
         if (settingsManager == null) {
             SettingsManager.createInstance(this);
@@ -1852,6 +1860,17 @@ public class CameraActivity extends Activity
         Intent intent = new Intent("org.omnirom.snap.action.CLOSE_FLASHLIGHT");
         intent.putExtra("camera_led", true);
         sendBroadcast(intent);
+    }
+
+    private boolean cameraConnected() {
+        android.hardware.camera2.CameraManager manager =
+        (android.hardware.camera2.CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        try {
+            return manager.getCameraIdList().length > 0;
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override

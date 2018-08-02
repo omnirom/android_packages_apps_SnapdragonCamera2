@@ -49,6 +49,7 @@ import android.renderscript.Type;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Size;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -68,6 +69,8 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+
+import com.android.camera.imageprocessor.filter.DeepPortraitFilter;
 import com.android.camera.ui.AutoFitSurfaceView;
 import com.android.camera.ui.Camera2FaceView;
 import com.android.camera.ui.CameraControls;
@@ -77,6 +80,7 @@ import com.android.camera.ui.CountDownView;
 import com.android.camera.ui.FlashToggleButton;
 import com.android.camera.ui.FocusIndicator;
 import com.android.camera.ui.PieRenderer;
+import com.android.camera.ui.ProMode;
 import com.android.camera.ui.RenderOverlay;
 import com.android.camera.ui.RotateImageView;
 import com.android.camera.ui.RotateLayout;
@@ -86,6 +90,8 @@ import com.android.camera.ui.TrackingFocusRenderer;
 import com.android.camera.ui.ZoomRenderer;
 import com.android.camera.util.CameraUtil;
 
+import com.android.camera.deepportrait.CamGLRenderer;
+import com.android.camera.deepportrait.GLCameraPreview;
 import org.omnirom.snap.R;
 
 import java.util.List;
@@ -113,6 +119,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private AutoFitSurfaceView mSurfaceViewMono;
     private SurfaceHolder mSurfaceHolder;
     private SurfaceHolder mSurfaceHolderMono;
+    private GLCameraPreview mGLSurfaceView = null;
     private int mOrientation;
     private int mFilterMenuStatus;
     private PreviewGestures mGestures;
@@ -164,6 +171,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         public void surfaceDestroyed(SurfaceHolder holder) {
             Log.v(TAG, "surfaceDestroyed");
             mSurfaceHolder = null;
+            if (mDeepZoomModeRect != null) {
+                mDeepZoomModeRect.setVisibility(View.GONE);
+            }
             previewUIDestroyed();
         }
     };
@@ -180,6 +190,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private Allocation mMonoDummyAllocation;
     private Allocation mMonoDummyOutputAllocation;
     private boolean mIsMonoDummyAllocationEverUsed = false;
+    private boolean mIsTouchAF = false;
 
     private int mScreenRatio = CameraUtil.RATIO_UNKNOWN;
     private int mTopMargin = 0;
@@ -190,7 +201,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private View mSceneModeSwitcher;
     private View mFrontBackSwitcher;
     private ImageView mMakeupButton;
+    private ImageView mDeepportraitSwitcher;
     private SeekBar mMakeupSeekBar;
+    private SeekBar mDeepportraitSeekBar;
     private View mMakeupSeekBarLayout;
     private View mSeekbarBody;
     private TextView mRecordingTimeView;
@@ -204,6 +217,11 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private LinearLayout mSceneModeLabelView;
     private TextView mSceneModeName;
     private ImageView mExitBestMode;
+    private RotateLayout mDeepZoomModeRect;
+    private TextView mDeepzoomSetName;
+    private int mDeepZoomIndex = 0;
+    private float mDeepZoomValue = 1.0f;
+
     private ImageView mSceneModeLabelCloseIcon;
     private AlertDialog  mSceneModeInstructionalDialog = null;
 
@@ -237,6 +255,12 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mActivity.updateThumbnail(mThumbnail);
             }
         }
+    }
+
+    public void initThumbnail() {
+        if (mThumbnail == null)
+            mThumbnail = (ImageView) mRootView.findViewById(R.id.preview_thumb);
+        mActivity.updateThumbnail(mThumbnail);
     }
 
     private void previewUIDestroyed() {
@@ -291,6 +315,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFrontBackSwitcher = mRootView.findViewById(R.id.front_back_switcher);
         mMakeupButton = (ImageView) mRootView.findViewById(R.id.ts_makeup_switcher);
         mMakeupSeekBarLayout = mRootView.findViewById(R.id.makeup_seekbar_layout);
+        mDeepportraitSwitcher = (ImageView) mRootView.findViewById(R.id.deepportrait_switcher);
         mSeekbarBody = mRootView.findViewById(R.id.seekbar_body);
         mSeekbarToggleButton = (ImageView) mRootView.findViewById(R.id.seekbar_toggle);
         mSeekbarToggleButton.setOnClickListener(new View.OnClickListener() {
@@ -321,6 +346,29 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
+        mDeepportraitSeekBar = (SeekBar)mRootView.findViewById(R.id.deepportrait_seekbar);
+        mDeepportraitSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                 if (mModule.getCamGLRender() != null) {
+                     module.getCamGLRender().setBlurLevel(progress);
+                 }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                final SharedPreferences prefs =
+                        PreferenceManager.getDefaultSharedPreferences(mActivity);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putInt(SettingsManager.KEY_DEEPPORTRAIT_VALUE, seekBar.getProgress());
+                editor.commit();
+            }
+        });
         mMakeupButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
@@ -331,6 +379,26 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
         });
         setMakeupButtonIcon();
+
+        mDeepportraitSwitcher.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (module != null && !module.isAllSessionClosed()) {
+                    String value = mSettingsManager.getValue(SettingsManager.KEY_SCENE_MODE);
+                    if(value == null ||
+                            Integer.valueOf(value) != SettingsManager.SCENE_MODE_DEEPPORTRAIT_INT) {
+                        mSettingsManager.setValue(SettingsManager.KEY_SCENE_MODE,""+
+                                SettingsManager.SCENE_MODE_DEEPPORTRAIT_INT);
+                    } else {
+                        mSettingsManager.setValue(SettingsManager.KEY_SCENE_MODE,
+                                ""+SettingsManager.SCENE_MODE_AUTO_INT);
+                    }
+                }
+                setDeepportraitButtonIcon();
+            }
+        });
+        setDeepportraitButtonIcon();
+
         mFlashButton = (FlashToggleButton) mRootView.findViewById(R.id.flash_button);
         mProModeCloseButton = mRootView.findViewById(R.id.promode_close_button);
         mProModeCloseButton.setOnClickListener(new View.OnClickListener() {
@@ -353,20 +421,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
         mMuteButton = (RotateImageView)mRootView.findViewById(R.id.mute_button);
         mMuteButton.setVisibility(View.VISIBLE);
-        if(!mModule.isAudioMute()) {
-            mMuteButton.setImageResource(R.drawable.ic_unmuted_button);
-        } else {
-            mMuteButton.setImageResource(R.drawable.ic_muted_button);
-        }
+        setMuteButtonResource(!mModule.isAudioMute());
         mMuteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 boolean isEnabled = !mModule.isAudioMute();
                 mModule.setMute(isEnabled, true);
-                if (!isEnabled)
-                    mMuteButton.setImageResource(R.drawable.ic_unmuted_button);
-                else
-                    mMuteButton.setImageResource(R.drawable.ic_muted_button);
+                setMuteButtonResource(!isEnabled);
             }
         });
 
@@ -381,6 +442,16 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         RotateImageView muteButton = (RotateImageView) mRootView.findViewById(R.id.mute_button);
         muteButton.setVisibility(View.GONE);
 
+        mDeepZoomModeRect = (RotateLayout)mRootView.findViewById(R.id.deepzoom_set_layout);
+        mDeepzoomSetName = (TextView)mRootView.findViewById(R.id.deepzoom_set);
+        mDeepzoomSetName.setText("Zoom OFF");
+        mDeepzoomSetName.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mDeepZoomIndex = (mDeepZoomIndex + 1) % 3;
+                updateDeepZoomIndex();
+            }
+        });
         mSceneModeLabelRect = (RotateLayout)mRootView.findViewById(R.id.scene_mode_label_rect);
         mSceneModeName = (TextView)mRootView.findViewById(R.id.scene_mode_label);
         mSceneModeLabelCloseIcon = (ImageView)mRootView.findViewById(R.id.scene_mode_label_close);
@@ -402,7 +473,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mCameraControls.setVideoMode(false);
             mCancelButton.setVisibility(View.VISIBLE);
             mReviewCancelButton = mRootView.findViewById(R.id.preview_btn_cancel);
-            mReviewDoneButton = mRootView.findViewById(R.id.preview_btn_done);
+            mReviewDoneButton = mRootView.findViewById(R.id.done_button);
             mReviewRetakeButton = mRootView.findViewById(R.id.preview_btn_retake);
             mReviewPlayButton = mRootView.findViewById(R.id.preview_play);
             mPreviewLayout = (FrameLayout)mRootView.findViewById(R.id.preview_of_intent);
@@ -519,6 +590,28 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return mModule.getCurrentIntentMode();
     }
 
+    private void updateDeepZoomIndex() {
+        switch(mDeepZoomIndex) {
+            case 0:
+                mDeepzoomSetName.setText("Zoom OFF");
+                mDeepZoomValue = 1.0f;
+                break;
+            case 1:
+                mDeepzoomSetName.setText("Zoom 2X");
+                mDeepZoomValue = 2.0f;
+                break;
+            case 2:
+                mDeepzoomSetName.setText("Zoom 4X");
+                mDeepZoomValue = 4.0f;
+                break;
+            default:
+                mDeepZoomValue = 1.0f;
+                mDeepzoomSetName.setText("Zoom OFF");
+                break;
+        }
+        mModule.updateDeepZoomIndex(mDeepZoomValue);
+    }
+
     private void toggleMakeup() {
         String value = mSettingsManager.getValue(SettingsManager.KEY_MAKEUP);
         if(value != null && !mIsVideoUI) {
@@ -553,10 +646,32 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         });
     }
 
+    public float getDeepZoomValue() {
+        return mDeepZoomValue;
+    }
+
+    private void setDeepportraitButtonIcon() {
+        boolean enable = DeepPortraitFilter.isSupportedStatic();
+        mDeepportraitSwitcher.setEnabled(enable);
+        mActivity.runOnUiThread(new Runnable() {
+            public void run() {
+                if(mModule.isDeepPortraitMode()) {
+                    mDeepportraitSwitcher.setImageResource(R.drawable.deep_portrait_on);
+                } else {
+                    mDeepportraitSwitcher.setImageResource(R.drawable.deep_portrait);
+                }
+            }
+        });
+    }
+
     public void onCameraOpened(List<Integer> cameraIds) {
         mGestures.setCaptureUI(this);
-        mGestures.setZoomEnabled(mSettingsManager.isZoomSupported(cameraIds));
-        initializeZoom(cameraIds);
+        if (mModule.isDeepZoom()) {
+            mGestures.setZoomEnabled(false);
+        } else {
+            mGestures.setZoomEnabled(mSettingsManager.isZoomSupported(cameraIds));
+            initializeZoom(cameraIds);
+        }
     }
 
     public void reInitUI() {
@@ -564,6 +679,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         initFilterModeButton();
         initFlashButton();
         setMakeupButtonIcon();
+        setDeepportraitButtonIcon();
         showSceneModeLabel();
         updateMenus();
         if(mModule.isTrackingFocusSettingOn()) {
@@ -666,6 +782,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void initSwitchCamera() {
         mFrontBackSwitcher.setVisibility(View.INVISIBLE);
         String value = mSettingsManager.getValue(SettingsManager.KEY_CAMERA_ID);
+        Log.d(TAG,"value of KEY_CAMERA_ID is null? " + (value==null));
         if (value == null)
             return;
 
@@ -756,12 +873,21 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             mRecordingTimeRect.setVisibility(View.VISIBLE);
             mMuteButton.setVisibility(View.VISIBLE);
             doShutterAnimation(mVideoButton);
+            setMuteButtonResource(!mModule.isAudioMute());
         } else {
             mFlashButton.setVisibility(View.VISIBLE);
             mFlashButton.init(false);
             mVideoButton.setImageResource(R.drawable.shutter_vector_video);
             mRecordingTimeRect.setVisibility(View.GONE);
             mMuteButton.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    private void setMuteButtonResource(boolean isUnMute) {
+        if(isUnMute) {
+            mMuteButton.setImageResource(R.drawable.ic_unmuted_button);
+        } else {
+            mMuteButton.setImageResource(R.drawable.ic_muted_button);
         }
     }
 
@@ -868,13 +994,24 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mIsSceneModeLabelClose = false;
         int index = mSettingsManager.getValueIndex(SettingsManager.KEY_SCENE_MODE);
         CharSequence sceneModeNameArray[] = mSettingsManager.getEntries(SettingsManager.KEY_SCENE_MODE);
-        if ( index > 0 && index < sceneModeNameArray.length ) {
+        if (mModule.isDeepPortraitMode()) {
+            mSceneModeLabelRect.setVisibility(View.GONE);
+            mExitBestMode.setVisibility(View.GONE);
+            return;
+        }
+        if ( index > 0 && index < sceneModeNameArray.length) {
             mSceneModeName.setText(sceneModeNameArray[index]);
             mSceneModeLabelRect.setVisibility(View.VISIBLE);
             mExitBestMode.setVisibility(View.VISIBLE);
+            if (mModule.isDeepZoom()) {
+                mDeepZoomModeRect.setVisibility(View.VISIBLE);
+            } else {
+                mDeepZoomModeRect.setVisibility(View.GONE);
+            }
         }else{
             mSceneModeLabelRect.setVisibility(View.GONE);
             mExitBestMode.setVisibility(View.GONE);
+            mDeepZoomModeRect.setVisibility(View.GONE);
         }
     }
 
@@ -889,6 +1026,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void hideUIwhileRecording() {
         mCameraControls.setVideoMode(true);
         mSceneModeLabelRect.setVisibility(View.INVISIBLE);
+        mDeepZoomModeRect.setVisibility(View.INVISIBLE);
         mFrontBackSwitcher.setVisibility(View.INVISIBLE);
         mFilterModeSwitcher.setVisibility(View.INVISIBLE);
         mSceneModeSwitcher.setVisibility(View.INVISIBLE);
@@ -896,6 +1034,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if(value != null && value.equals("0")) {
             mMakeupButton.setVisibility(View.INVISIBLE);
         }
+        mDeepportraitSwitcher.setVisibility(View.INVISIBLE);
         mIsVideoUI = true;
         mPauseButton.setVisibility(View.VISIBLE);
     }
@@ -906,6 +1045,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mFilterModeSwitcher.setVisibility(View.VISIBLE);
         mSceneModeSwitcher.setVisibility(View.VISIBLE);
         mMakeupButton.setVisibility(View.VISIBLE);
+        mDeepportraitSwitcher.setVisibility(View.VISIBLE);
         mIsVideoUI = false;
         mPauseButton.setVisibility(View.INVISIBLE);
         //exit recording mode needs to refresh scene mode label.
@@ -1131,6 +1271,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mFilterModeSwitcher != null) mFilterModeSwitcher.setVisibility(status);
         if (mFilterModeSwitcher != null) mFilterModeSwitcher.setVisibility(status);
         if (mMakeupButton != null) mMakeupButton.setVisibility(status);
+        if (mDeepportraitSwitcher != null) mDeepportraitSwitcher.setVisibility(status);
     }
 
     public void initializeControlByIntent() {
@@ -1185,6 +1326,38 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         showUI();
         updateMenus();
         mActivity.setSystemBarsVisibility(false);
+    }
+
+    public void startDeepPortraitMode(Size preview) {
+        mSurfaceView.setVisibility(View.GONE);
+        mSurfaceViewMono.setVisibility(View.GONE);
+        mGLSurfaceView = new GLCameraPreview(
+                    mActivity, preview.getWidth(), preview.getHeight(), mModule);
+        FrameLayout layout = (FrameLayout) mActivity.findViewById(R.id.camera_glpreview);
+        layout.addView(mGLSurfaceView);
+        mGLSurfaceView.setVisibility(View.VISIBLE);
+        mRootView.requestLayout();
+        final SharedPreferences prefs =
+                PreferenceManager.getDefaultSharedPreferences(mActivity);
+        int progress = prefs.getInt(SettingsManager.KEY_DEEPPORTRAIT_VALUE,50);
+        mDeepportraitSeekBar.setProgress(progress);
+        mDeepportraitSeekBar.setVisibility(View.VISIBLE);
+        mRenderOverlay.setVisibility(View.GONE);
+    }
+
+    public void stopDeepPortraitMode() {
+        FrameLayout layout = (FrameLayout)mActivity.findViewById(R.id.camera_glpreview);
+        if (mGLSurfaceView != null) {
+            mGLSurfaceView.setVisibility(View.GONE);
+            layout.removeAllViews();
+            mGLSurfaceView = null;
+        }
+        mDeepportraitSeekBar.setVisibility(View.GONE);
+        mRenderOverlay.setVisibility(View.VISIBLE);
+    }
+
+    public GLCameraPreview getGLCameraPreview() {
+        return  mGLSurfaceView;
     }
 
     public void updateMenus() {
@@ -1390,8 +1563,17 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
             }
             return mTrackingFocusRenderer;
         }
+        FocusIndicator focusIndicator;
+        if (mFaceView != null && mFaceView.faceExists() && !mIsTouchAF) {
+            if (mPieRenderer != null) {
+                mPieRenderer.clear();
+            }
+            focusIndicator = mFaceView;
+        } else {
+            focusIndicator = mPieRenderer;
+        }
 
-        return (mFaceView != null && mFaceView.faceExists()) ? mFaceView : mPieRenderer;
+        return focusIndicator;
     }
 
     @Override
@@ -1407,11 +1589,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void clearFocus() {
         FocusIndicator indicator = getFocusIndicator();
         if (indicator != null) indicator.clear();
+        mIsTouchAF = false;
     }
 
     @Override
     public void setFocusPosition(int x, int y) {
         mPieRenderer.setFocus(x, y);
+        mIsTouchAF = true;
     }
 
     @Override
@@ -1442,13 +1626,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     public void resumeFaceDetection() {
     }
 
-    public void onStartFaceDetection(int orientation, boolean mirror, Rect cameraBound) {
+    public void onStartFaceDetection(int orientation, boolean mirror, Rect cameraBound,
+                                     Rect originalCameraBound) {
         mFaceView.setBlockDraw(false);
         mFaceView.clear();
         mFaceView.setVisibility(View.VISIBLE);
         mFaceView.setDisplayOrientation(orientation);
         mFaceView.setMirror(mirror);
         mFaceView.setCameraBound(cameraBound);
+        mFaceView.setOriginalCameraBound(originalCameraBound);
         mFaceView.setZoom(mModule.getZoomValue());
         mFaceView.resume();
     }
@@ -1523,6 +1709,15 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 mSceneModeName.setRotation(0);
                 mSceneModeLabelCloseIcon.setRotation(0);
                 mSceneModeLabelRect.setOrientation(orientation, false);
+            }
+        }
+        if ( mDeepZoomModeRect != null ) {
+            if (orientation == 180) {
+                mDeepzoomSetName.setRotation(180);
+                mDeepZoomModeRect.setOrientation(0, false);
+            } else {
+                mDeepzoomSetName.setRotation(0);
+                mDeepZoomModeRect.setOrientation(orientation, false);
             }
         }
 
@@ -1600,7 +1795,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         if (mGestures != null) {
             mGestures.setEnabled(previewFocused);
         }
-        if (mRenderOverlay != null) {
+        if (mRenderOverlay != null && !mModule.isDeepPortraitMode()) {
             // this can not happen in capture mode
             mRenderOverlay.setVisibility(previewFocused ? View.VISIBLE : View.GONE);
         }
@@ -1670,6 +1865,9 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
                 }
             }else if(state.key.equals(SettingsManager.KEY_FLASH_MODE) ) {
                 enableView(mFlashButton, SettingsManager.KEY_FLASH_MODE);
+            }else if (state.key.equals(SettingsManager.KEY_FOCUS_DISTANCE)) {
+                if (mPieRenderer != null)
+                    mPieRenderer.setVisible(false);
             }
         }
     }
@@ -1798,6 +1996,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
 
     public ImageView getVideoButton() {
         return mVideoButton;
+    }
+
+    public int getCurrentProMode() {
+        return mCameraControls.getPromode();
     }
 
 }

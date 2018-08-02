@@ -36,7 +36,6 @@ import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
-import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.location.Location;
 import android.media.MediaRecorder;
@@ -78,6 +77,8 @@ import java.util.ArrayList;
 import java.util.Locale;
 import android.util.Range;
 import java.util.StringTokenizer;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 
 import com.android.camera.SettingsManager;
 import android.hardware.camera2.CameraAccessException;
@@ -89,6 +90,7 @@ import android.hardware.camera2.utils.SurfaceUtils;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Set;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -139,6 +141,9 @@ public class CameraUtil {
     public static final String SCENE_MODE_HDR = "hdr";
     public static final String TRUE = "true";
     public static final String FALSE = "false";
+
+    private static final Class<?>[] CTOR_SIGNATURE =
+            new Class[] {CaptureRequest.class, CameraMetadataNative.class, boolean.class, int.class};
 
     // Fields for the show-on-maps-functionality
     private static final String MAPS_PACKAGE_NAME = "com.google.android.apps.maps";
@@ -612,12 +617,13 @@ public class CameraUtil {
 
     public static int getOptimalPreviewSize(Activity currentActivity,
             Point[] sizes, double targetRatio) {
+        // TODO(andyhuibers): Don't hardcode this but use device's measurements.
+        final int MAX_ASPECT_HEIGHT = 1080;
         // Use a very small tolerance because we want an exact match.
         final double ASPECT_TOLERANCE = 0.01;
         if (sizes == null) return -1;
 
         int optimalSizeIndex = -1;
-        double minDiff = Double.MAX_VALUE;
 
         // Because of bugs of overlay and layout, we sometimes will try to
         // layout the viewfinder in the portrait orientation and thus get the
@@ -625,12 +631,21 @@ public class CameraUtil {
         // new overlay will be created before the old one closed, which causes
         // an exception. For now, just get the screen size.
         Point point = getDefaultDisplaySize(currentActivity, new Point());
+        final double ratio_4_3 = (double)4/3;
         int targetHeight = Math.min(point.x, point.y);
+        double minDiff = targetHeight;
         // Try to find an size match aspect ratio and size
         for (int i = 0; i < sizes.length; i++) {
             Point size = sizes[i];
             double ratio = (double) size.x / size.y;
             if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
+
+            // Count sizes with height <= 1080p to mimic camera1 api behavior.
+            if (ratio_4_3 == targetRatio) {
+                if (size.y > minDiff) continue;
+            } else {
+                if (size.y > MAX_ASPECT_HEIGHT) continue;
+            }
 
             double heightDiff = Math.abs(size.y - targetHeight);
             if (heightDiff < minDiff) {
@@ -640,6 +655,71 @@ public class CameraUtil {
                 // Prefer resolutions smaller-than-display when an equally close
                 // larger-than-display resolution is available
                 if (size.y < targetHeight) {
+                    optimalSizeIndex = i;
+                    minDiff = heightDiff;
+                }
+            }
+        }
+        // Cannot find the one match the aspect ratio. This should not happen.
+        // Ignore the requirement.
+        if (optimalSizeIndex == -1) {
+            Log.w(TAG, "No preview size match the aspect ratio");
+            minDiff = Double.MAX_VALUE;
+            for (int i = 0; i < sizes.length; i++) {
+                Point size = sizes[i];
+                if (Math.abs(size.y - targetHeight) < minDiff) {
+                    optimalSizeIndex = i;
+                    minDiff = Math.abs(size.y - targetHeight);
+                }
+            }
+        }
+        return optimalSizeIndex;
+    }
+
+    public static Size getOptimalVideoPreviewSize(Activity currentActivity,
+            List<Size> sizes, android.util.Size targetSize) {
+
+        Point[] points = new Point[sizes.size()];
+
+        int index = 0;
+        for (Size s : sizes) {
+            points[index++] = new Point(s.width, s.height);
+        }
+
+        int optimalPickIndex = getOptimalVideoPreviewSize(currentActivity, points, targetSize);
+        return (optimalPickIndex == -1) ? null : sizes.get(optimalPickIndex);
+    }
+
+    public static int getOptimalVideoPreviewSize(Activity currentActivity,
+            Point[] sizes, android.util.Size targetSize) {
+        // Use a very small tolerance because we want an exact match.
+        final double ASPECT_TOLERANCE = 0.01;
+        double targetRatio = (double) targetSize.getWidth() / targetSize.getHeight();
+        if (sizes == null) return -1;
+
+        int optimalSizeIndex = -1;
+        double minDiff = Double.MAX_VALUE;
+
+        // we want the video preview size is not bigger than 1080p
+        // This point is for 1080p
+        Point point = new Point(1920, 1080);
+        int targetHeight = Math.min(point.x, point.y);
+        // we want the video preview size is not bigger than video size
+        int videoMiniHeight = Math.min(targetSize.getWidth(), targetSize.getHeight());
+        // Try to find an size match aspect ratio and size
+        for (int i = 0; i < sizes.length; i++) {
+            Point size = sizes[i];
+            double ratio = (double) size.x / size.y;
+            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
+
+            double heightDiff = Math.abs(size.y - targetHeight);
+            if (heightDiff < minDiff && size.y <= videoMiniHeight) {
+                optimalSizeIndex = i;
+                minDiff = Math.abs(size.y - targetHeight);
+            } else if (heightDiff == minDiff) {
+                // Prefer resolutions smaller-than-display when an equally close
+                // larger-than-display resolution is available
+                if (size.y < targetHeight && size.y <= videoMiniHeight) {
                     optimalSizeIndex = i;
                     minDiff = heightDiff;
                 }
@@ -958,11 +1038,13 @@ public class CameraUtil {
         if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
             orientation = 0;
         }
-        CameraInfo info = CameraHolder.instance().getCameraInfo()[cameraId];
-        if (info.facing == CameraInfo.CAMERA_FACING_FRONT) {
-            rotation = (info.orientation - orientation + 360) % 360;
+        CameraCharacteristics info = CameraHolder.instance().getCameraCharacteristics(cameraId);
+        if (info.get(CameraCharacteristics.LENS_FACING) ==
+                CameraCharacteristics.LENS_FACING_FRONT) {
+            rotation = (info.get(CameraCharacteristics.SENSOR_ORIENTATION)
+                    - orientation + 360) % 360;
         } else {  // back-facing camera
-            rotation = (info.orientation + orientation) % 360;
+            rotation = (info.get(CameraCharacteristics.SENSOR_ORIENTATION) + orientation) % 360;
         }
         return rotation;
     }
@@ -1364,22 +1446,26 @@ public class CameraUtil {
         }
     }
 
-    public static List<CaptureRequest> createHighSpeedRequestList(CaptureRequest request
-            ,int cameraId) throws CameraAccessException {
+    public static List<CaptureRequest> createHighSpeedRequestList(final CaptureRequest request)
+            throws CameraAccessException {
         if (request == null) {
             throw new IllegalArgumentException("Input capture request must not be null");
         }
+        Set<String> physicalCameraIdSet = null;
         Collection<Surface> outputSurfaces = request.getTargets();
         Range<Integer> fpsRange = request.get(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE);
 
         StreamConfigurationMap config =
-                SettingsManager.getInstance().getStreamConfigurationMap(cameraId);
+                SettingsManager.getInstance().getStreamConfigurationMap((int)request.getTag());
         SurfaceUtils.checkConstrainedHighSpeedSurfaces(outputSurfaces, fpsRange, config);
 
         // Request list size: to limit the preview to 30fps, need use maxFps/30; to maximize
         // the preview frame rate, should use maxBatch size for that high speed stream
         // configuration. We choose the former for now.
-        int requestListSize = fpsRange.getUpper() / 30;
+        int requestListSize = getHighSpeedVideoConfigsLists((int)request.getTag());
+        if (requestListSize == -1) {
+            requestListSize = fpsRange.getUpper() / 30;
+        }
         List<CaptureRequest> requestList = new ArrayList<CaptureRequest>();
 
         // Prepare the Request builders: need carry over the request controls.
@@ -1387,9 +1473,10 @@ public class CameraUtil {
         CameraMetadataNative requestMetadata = new CameraMetadataNative(request.getNativeCopy());
         // Note that after this step, the requestMetadata is mutated (swapped) and can not be used
         // for next request builder creation.
-        CaptureRequest.Builder singleTargetRequestBuilder = new CaptureRequest.Builder(
-                requestMetadata, /*reprocess*/false, CameraCaptureSession.SESSION_ID_NONE);
-        singleTargetRequestBuilder.setTag(cameraId);
+        CaptureRequest.Builder singleTargetRequestBuilder = constructorCaptureRequestBuilder(
+                requestMetadata, /*reprocess*/false, CameraCaptureSession.SESSION_ID_NONE,
+                request, physicalCameraIdSet);
+        singleTargetRequestBuilder.setTag(request.getTag());
 
         // Overwrite the capture intent to make sure a good value is set.
         Iterator<Surface> iterator = outputSurfaces.iterator();
@@ -1411,9 +1498,10 @@ public class CameraUtil {
             // Have to create a new copy, the original one was mutated after a new
             // CaptureRequest.Builder creation.
             requestMetadata = new CameraMetadataNative(request.getNativeCopy());
-            doubleTargetRequestBuilder = new CaptureRequest.Builder(
-                    requestMetadata, /*reprocess*/false, CameraCaptureSession.SESSION_ID_NONE);
-            doubleTargetRequestBuilder.setTag(cameraId);
+            doubleTargetRequestBuilder = constructorCaptureRequestBuilder(requestMetadata,
+                    /*reprocess*/false, CameraCaptureSession.SESSION_ID_NONE,
+                    request, physicalCameraIdSet);
+            doubleTargetRequestBuilder.setTag(request.getTag());
             doubleTargetRequestBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT,
                     CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD);
             doubleTargetRequestBuilder.addTarget(firstSurface);
@@ -1443,6 +1531,91 @@ public class CameraUtil {
         }
 
         return Collections.unmodifiableList(requestList);
+    }
+
+    private static int getHighSpeedVideoConfigsLists(int cameraId) {
+        int optimalSizeIndex = -1;
+        SettingsManager settingsManager = SettingsManager.getInstance();
+        int[] table = settingsManager.getHighSpeedVideoConfigs(cameraId);
+        if (table == null) {
+            Log.w(TAG, " getHighSpeedVideoConfigsLists is  null");
+            return optimalSizeIndex;
+        }
+        String videoSizeString = settingsManager.getValue(SettingsManager.KEY_VIDEO_QUALITY);
+        if (videoSizeString == null) {
+            Log.w(TAG, " KEY_VIDEO_QUALITY is null");
+            return optimalSizeIndex;
+        }
+        android.util.Size videoSize = parsePictureSize(videoSizeString);
+        String rateValue = settingsManager.getValue(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
+        if (rateValue == null || rateValue.substring(0, 3).equals("off")) {
+            Log.w(TAG, " KEY_VIDEO_HIGH_FRAME_RATE is null");
+            return optimalSizeIndex;
+        }
+        int frameRate = Integer.parseInt(rateValue.substring(3));
+        for (int i = 0; i < table.length; i += 5) {
+            if (table[i] == videoSize.getWidth()
+                    && table[i + 1] == videoSize.getHeight()
+                    && (table[i + 2] == frameRate
+                    || table[i + 3] == frameRate)) {
+                if (i != table.length) {
+                    optimalSizeIndex = table[i + 4];
+                    return optimalSizeIndex;
+                }
+            }
+        }
+        return optimalSizeIndex;
+    }
+
+    private static android.util.Size parsePictureSize(String value) {
+        int indexX = value.indexOf('x');
+        int width = Integer.parseInt(value.substring(0, indexX));
+        int height = Integer.parseInt(value.substring(indexX + 1));
+        return new android.util.Size(width, height);
+    }
+
+    private static CaptureRequest.Builder constructorCaptureRequestBuilder (
+            CameraMetadataNative requestMetadata, boolean reprocess, int SESSION_ID_NONE,
+            CaptureRequest request, Set<String> physicalCameraIdSet) {
+        CaptureRequest.Builder builder = null;
+        try {
+            Class clazz = Class.forName("android.hardware.camera2.CaptureRequest$Builder");
+            // for Android O, has 3 parameters
+            builder = (CaptureRequest.Builder) clazz.getConstructors()[0].newInstance(
+                    requestMetadata, reprocess, SESSION_ID_NONE);
+        } catch (ClassNotFoundException e) {
+            Log.v(TAG, "constructorCaptureRequestBuilder for AndroidO ClassNotFoundException "
+                    + e.toString());
+        } catch (Exception e) {
+            Log.v(TAG, "constructorCaptureRequestBuilder for AndroidO Exception " + e.toString());
+        }
+
+        if (builder == null) {
+            // for Android P has 5 parameters
+            String logicalCameraId = "-1";
+            try {
+                Method getLogicalCameraId = Class.forName("android.hardware.camera2.CaptureRequest")
+                        .getMethod("getLogicalCameraId");
+                logicalCameraId = (String) getLogicalCameraId.invoke(request);
+            } catch (NoSuchMethodException e) {
+                Log.v(TAG, "constructorCaptureRequestBuilder NoSuchMethodException"+ e.toString());
+            } catch (Exception e) {
+                Log.v(TAG, "constructorCaptureRequestBuilder logicalCameraId Exception"
+                        + e.toString());
+            }
+            try {
+                Class clazz = Class.forName("android.hardware.camera2.CaptureRequest$Builder");
+                Log.v(TAG, "logicalCameraId :" + logicalCameraId);
+                builder = (CaptureRequest.Builder) clazz.getConstructors()[0].newInstance(
+                        requestMetadata, reprocess, SESSION_ID_NONE,
+                        logicalCameraId, physicalCameraIdSet);
+            } catch (ClassNotFoundException e) {
+                Log.v(TAG, "constructorCaptureRequestBuilder ClassNotFoundException"+e.toString());
+            } catch (Exception e) {
+                Log.v(TAG, "constructorCaptureRequestBuilder Exception"+e.toString());
+            }
+        }
+        return builder;
     }
 
     public static int dip2px(Context context, float dpValue) {

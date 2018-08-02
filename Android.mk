@@ -25,6 +25,7 @@ LOCAL_AAPT_FLAGS := \
         --version-code $(version_code_package) \
 
 LOCAL_PACKAGE_NAME := SnapdragonCamera2
+LOCAL_PRIVATE_PLATFORM_APIS:=true
 
 #LOCAL_SDK_VERSION := current
 LOCAL_RENDERSCRIPT_TARGET_API := 23
@@ -37,6 +38,7 @@ LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 # If this is an unbundled build (to install separately) then include
 # the libraries in the APK, otherwise just put them in /system/lib and
 # leave them out of the APK
+
 ifneq (,$(TARGET_BUILD_APPS))
   LOCAL_JNI_SHARED_LIBRARIES := libjni_snapcammosaic libjni_snapcamtinyplanet libjni_imageutil
 else

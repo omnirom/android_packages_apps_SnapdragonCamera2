@@ -158,6 +158,8 @@
         <item>108</item>
         <item>104</item>
         <item>109</item>
+        <item>110</item>
+	<item>111</item>
     </string-array>
 
     <!-- Camera Preferences Scene Mode dialog box entries -->
@@ -185,6 +187,8 @@
         <item>@string/pref_camera_scenemode_entry_trackingfocus</item>
         <item>@string/pref_camera_scenemode_entry_panorama</item>
         <item>@string/pref_camera_scenemode_entry_promode</item>
+        <item>@string/pref_camera_scenemode_entry_deepzoom</item>
+	<item>@string/pref_camera_scenemode_entry_deepportrait</item>
     </string-array>
 
     <array name="pref_camera2_scenemode_thumbnails" translatable="false">
@@ -211,6 +215,8 @@
         <item>@drawable/tracking_focus</item>
         <item>@drawable/scene_panorama</item>
         <item>@drawable/promode</item>
+        <item>@drawable/sharp_photo</item>
+	<item>@drawable/deep_portrait</item>
     </array>
 
     <array name="pref_camera2_scenemode_black_thumbnails" translatable="false">
@@ -237,6 +243,8 @@
         <item>@drawable/ic_scene_mode_black_tracking_focus</item>
         <item>@drawable/ic_scene_mode_black_panorama</item>
         <item>@drawable/ic_scene_mode_black_dual_camera</item>
+        <item>@drawable/ic_scene_mode_black_sharp_photo</item>
+	<item>@drawable/deep_portrait_black</item>
     </array>
 
     <!-- Camera Preferences Scene Mode dialog box entries -->
@@ -264,6 +272,8 @@
         <item>@string/pref_camera2_scene_mode_tracking_focus_instructional_content</item>
         <item>@string/pref_camera2_scene_mode_panorama_instructional_content</item>
         <item>@string/pref_camera2_scene_mode_pro_instructional_content</item>
+        <item>@string/pref_camera2_scene_mode_deepzoom_instructional_content</item>
+	<item>@string/pref_camera2_scene_mode_deepportrait_instructional_content</item>
     </string-array>
 
     <string-array name="pref_camera2_whitebalance_entryvalues" translatable="false">
@@ -427,6 +437,7 @@
     <string-array name="pref_camera2_picturesize_entries" translatable="false">
         <item>@string/pref_camera_picturesize_entry_24mp</item>
         <item>@string/pref_camera_picturesize_entry_21mp</item>
+        <item>5184 x 3880</item>
         <item>@string/pref_camera_picturesize_entry_16mp</item>
         <item>@string/pref_camera_picturesize_entry_16mp_wide</item>
         <item>@string/pref_camera_picturesize_entry_13mp</item>
@@ -448,6 +459,7 @@
         <item>@string/pref_camera_picturesize_entry_1_3mp</item>
         <item>@string/pref_camera_picturesize_entry_1280x768</item>
         <item>@string/pref_camera_picturesize_entry_1280x720</item>
+        <item>@string/pref_camera_picturesize_entry_1280x400</item>
         <item>@string/pref_camera_picturesize_entry_1mp</item>
         <item>@string/pref_camera_picturesize_entry_800x600</item>
         <item>@string/pref_camera_picturesize_entry_800x480</item>
@@ -463,6 +475,7 @@
     <string-array name="pref_camera2_picturesize_entryvalues" translatable="false">
         <item>5656x4242</item>
         <item>5344x4008</item>
+        <item>5184x3880</item>
         <item>4608x3456</item>
         <item>5312x2988</item>
         <item>4160x3120</item>
@@ -484,6 +497,7 @@
         <item>1280x960</item>
         <item>1280x768</item>
         <item>1280x720</item>
+        <item>1280x400</item>
         <item>1024x768</item>
         <item>800x600</item>
         <item>800x480</item>
@@ -1013,16 +1027,6 @@ for time lapse recording -->
         <item>@string/pref_camera2_saturation_level_entry_10</item>
     </string-array>
 
-    <string-array name="pref_camera2_histogram_entryvalues" translatable="false">
-        <item>enable</item>
-        <item>disable</item>
-    </string-array>
-
-    <string-array name="pref_camera2_histogram_entries" translatable="true">
-        <item>@string/pref_camera2_histogram_entry_enable</item>
-        <item>@string/pref_camera2_histogram_entry_disable</item>
-    </string-array>
-
     <string-array name="pref_camera2_hdr_entryvalues" translatable="false">
         <item>enable</item>
         <item>disable</item>
@@ -1075,4 +1079,129 @@ for time lapse recording -->
         <item>@string/pref_camera2_zsl_entryvalue_hal_zsl</item>
     </string-array>
 
+    <string-array name="pref_camera2_videoencoderprofile_entry" translatable="false">
+        <item>Off</item>
+        <item>HLG</item>
+        <item>HDR10</item>
+    </string-array>
+
+    <string-array name="pref_camera2_videoencoderprofile_entryvalues" translatable="false">
+        <item>"off"</item>
+        <item>HEVCProfileMain10</item>
+        <item>HEVCProfileMain10HDR10</item>
+    </string-array>
+
+    <string-array name="pref_camera2_sharpness_control_entries">
+        <item>@string/pref_camera2_sharpness_control_entry_level0</item>
+        <item>@string/pref_camera2_sharpness_control_entry_level1</item>
+        <item>@string/pref_camera2_sharpness_control_entry_level2</item>
+        <item>@string/pref_camera2_sharpness_control_entry_level3</item>
+        <item>@string/pref_camera2_sharpness_control_entry_level4</item>
+        <item>@string/pref_camera2_sharpness_control_entry_level5</item>
+        <item>@string/pref_camera2_sharpness_control_entry_level6</item>
+    </string-array>
+
+    <!-- Entry Valur array for sharpness -->
+    <string-array name="pref_camera2_multilevel_sharpness_entryvalues">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+    </string-array>
+
+    <string-array name="pref_camera2_afmode_entries">
+        <item>@string/pref_camera2_afmode_entry_disable</item>
+        <item>@string/pref_camera2_afmode_entry_off</item>
+        <item>@string/pref_camera2_afmode_entry_auto</item>
+        <item>@string/pref_camera2_afmode_entry_macro</item>
+        <item>@string/pref_camera2_afmode_entry_continuous_video</item>
+        <item>@string/pref_camera2_afmode_entry_continuous_picture</item>
+        <item>@string/pref_camera2_afmode_entry_edof</item>
+    </string-array>
+
+    <string-array name="pref_camera2_afmode_entryvalues">
+        <item>@string/pref_camera2_afmode_value_disable</item>
+        <item>@string/pref_camera2_afmode_value_off</item>
+        <item>@string/pref_camera2_afmode_value_auto</item>
+        <item>@string/pref_camera2_afmode_value_macro</item>
+        <item>@string/pref_camera2_afmode_value_continuous_video</item>
+        <item>@string/pref_camera2_afmode_value_continuous_picture</item>
+        <item>@string/pref_camera2_afmode_value_edof</item>
+    </string-array>
+
+    <string-array name="pref_camera2_exposure_metering_entries" translatable="false">
+        <item>@string/pref_camera2_exposure_metering_entry_frame_average</item>
+        <item>@string/pref_camera2_exposure_metering_entry_center_weighted</item>
+        <item>@string/pref_camera2_exposure_metering_entry_spot_meteting</item>
+    </string-array>
+
+    <string-array name="pref_camera2_exposure_metering_entryvalues" translatable="false">
+        <item>@string/pref_camera2_exposure_metering_entryvalue_frame_average</item>
+        <item>@string/pref_camera2_exposure_metering_entryvalue_center_weighted</item>
+        <item>@string/pref_camera2_exposure_metering_entryvalue_spot_meteting</item>
+    </string-array>
+
+    <string-array name="pref_camera2_eis_entries" translatable="false">
+        <item>@string/pref_camera2_eis_entry_disable</item>
+        <item>@string/pref_camera2_eis_entry_v2enable</item>
+        <item>@string/pref_camera2_eis_entry_v3enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_eis_entryvalues" translatable="false">
+        <item>@string/pref_camera2_eis_entry_value_disable</item>
+        <item>@string/pref_camera2_eis_entry_value_v2enable</item>
+        <item>@string/pref_camera2_eis_entry_value_v3enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_fovc_entries" translatable="false">
+        <item>@string/pref_camera2_fovc_entry_disable</item>
+        <item>@string/pref_camera2_fovc_entry_enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_fovc_entryvalues" translatable="false">
+        <item>@string/pref_camera2_fovc_entry_value_disable</item>
+        <item>@string/pref_camera2_fovc_entry_value_enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_video_hdr_entries" translatable="false">
+        <item>@string/pref_camera2_video_hdr_entry_disable</item>
+        <item>@string/pref_camera2_video_hdr_entry_enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_video_hdr_entryvalues" translatable="false">
+        <item>@string/pref_camera2_video_hdr_entry_value_disable</item>
+        <item>@string/pref_camera2_video_hdr_entry_value_enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_deepportrait_entryvalues" translatable="false">
+        <item>@string/pref_camera2_deepportrait_entry_value_disable</item>
+        <item>@string/pref_camera2_deepportrait_entry_value_enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_earlypcr_entryvalues" translatable="false">
+        <item>@string/pref_camera2_earlypcr_entry_value_disable</item>
+        <item>@string/pref_camera2_earlypcr_entry_value_enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_earlypcr_entries" translatable="false">
+        <item>@string/pref_camera2_earlypcr_entry_disable</item>
+        <item>@string/pref_camera2_earlypcr_entry_enable</item>
+    </string-array>
+
+    <string-array name="pref_camera2_stats_visualizer_entries" translatable="false">
+        <item>@string/pref_camera2_stats_visualizer_entry_disable</item>
+        <item>@string/pref_camera2_stats_visualizer_entry_bg_stats</item>
+        <item>@string/pref_camera2_stats_visualizer_entry_be_stats</item>
+        <item>@string/pref_camera2_stats_visualizer_entry_hist_stats</item>
+    </string-array>
+
+    <string-array name="pref_camera2_stats_visualizer_entryvalues" translatable="false">
+        <item>@string/pref_camera2_stats_visualizer_entry_value_disable</item>
+        <item>@string/pref_camera2_stats_visualizer_entry_value_enable_bg</item>
+        <item>@string/pref_camera2_stats_visualizer_entry_value_enable_be</item>
+        <item>@string/pref_camera2_stats_visualizer_entry_value_enable_hist</item>
+    </string-array>
 </resources>

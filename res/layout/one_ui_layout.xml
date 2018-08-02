@@ -19,7 +19,9 @@
 <com.android.camera.ui.OneUICameraControls xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/camera_controls"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
 
     <com.android.camera.ui.ProMode
         android:id="@+id/promode_slider"
@@ -131,6 +133,48 @@
     <com.android.camera.ui.RotateImageView
         android:id="@+id/ts_makeup_switcher"
         style="@style/OneUIMenuButton" />
+
+    <com.android.camera.ui.RotateImageView
+        android:id="@+id/deepportrait_switcher"
+        style="@style/OneUIMenuButton" />
+
+    <LinearLayout
+        android:id="@+id/remaining_photos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/remaining_photos_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:textColor="@android:color/white"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/remaining_photos_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/remaining_sheets"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <include layout="@layout/pro_mode_layout" />
+
+    <SeekBar
+        android:layout_width="320dp"
+        android:layout_height="40dp"
+        android:maxHeight="3dip"
+        android:minHeight="1dip"
+        android:visibility="gone"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="90dp"
+        android:progressDrawable="@drawable/beautify_progressbar_style"
+        android:thumb="@drawable/ic_beautify_oval"
+        android:id="@+id/deepportrait_seekbar"/>
 
     <LinearLayout
         android:id="@+id/remaining_photos"

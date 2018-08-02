@@ -4889,7 +4889,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             mUI.enableVideo(!mLongshotActive);
             takePicture();
         } else {
-            RotateTextToast.makeText(mActivity, "Long shot not support", Toast.LENGTH_SHORT).show();
+            RotateTextToast.makeText(mActivity, "Long shot is not enabled", Toast.LENGTH_SHORT).show();
         }
     }
 

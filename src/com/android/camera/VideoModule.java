@@ -71,8 +71,8 @@ import com.android.camera.util.ApiHelper;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.util.PersistUtil;
 import com.android.camera.util.UsageStatistics;
-import org.omnirom.snap.R;
 import com.android.camera.PhotoModule;
+import org.omnirom.snap.R;
 
 import org.codeaurora.snapcam.wrapper.ParametersWrapper;
 import org.codeaurora.snapcam.wrapper.CamcorderProfileWrapper;
@@ -3031,7 +3031,7 @@ public class VideoModule implements CameraModule,
             return;
         }
         forceFlashOffIfSupported(forceOff);
-        mCameraDevice.setParameters(mParameters);
+        mCameraDevice.setParameters(mCameraDevice.getParameters());
         mUI.updateOnScreenIndicators(mParameters, mPreferences);
     }
 

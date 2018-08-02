@@ -38,6 +38,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.android.camera.CaptureModule;
+import com.android.camera.SettingsManager;
 import com.android.camera.Storage;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;
 
@@ -58,6 +59,7 @@ public class OneUICameraControls extends RotatableLayout {
     private View mPreview;
     private View mSceneModeSwitcher;
     private View mFilterModeSwitcher;
+    private View mDeepportraitSwitcher;
     private View mMakeupSeekBar;
     private View mMakeupSeekBarLowText;
     private View mMakeupSeekBarHighText;
@@ -153,6 +155,7 @@ public class OneUICameraControls extends RotatableLayout {
         mMakeupSeekBarLayout = findViewById(R.id.makeup_seekbar_layout);
         ((SeekBar)mMakeupSeekBar).setMax(100);
         mFlashButton = findViewById(R.id.flash_button);
+        mDeepportraitSwitcher = findViewById(R.id.deepportrait_switcher);
         mMute = findViewById(R.id.mute_button);
         mPreview = findViewById(R.id.preview_thumb);
         mSceneModeSwitcher = findViewById(R.id.scene_mode_switcher);
@@ -230,8 +233,8 @@ public class OneUICameraControls extends RotatableLayout {
 
         mViews = new View[]{
                 mSceneModeSwitcher, mFilterModeSwitcher, mFrontBackSwitcher,
-                mTsMakeupSwitcher, mFlashButton, mShutter, mPreview, mVideoShutter,
-                mPauseButton, mCancelButton
+                mTsMakeupSwitcher,mDeepportraitSwitcher, mFlashButton, mShutter,
+                mPreview, mVideoShutter, mPauseButton, mCancelButton
         };
         mBottomLargeSize = getResources().getDimensionPixelSize(
                 R.dimen.one_ui_bottom_large);
@@ -310,7 +313,12 @@ public class OneUICameraControls extends RotatableLayout {
         } else {
             v.setY(mHeight - mBottom + (mBottom - h) / 2);
         }
-        float bW = mWidth / 5f;
+        float bW;
+        if (top) {
+            bW = mWidth / 6f;
+        } else {
+            bW = mWidth / 5f;
+        }
         v.setX(bW * idx + (bW - w) / 2);
     }
 
@@ -342,6 +350,7 @@ public class OneUICameraControls extends RotatableLayout {
             setLocation(mFrontBackSwitcher, true, 2);
             setLocation(mTsMakeupSwitcher, true, 3);
             setLocation(mFlashButton, true, 4);
+            setLocation(mDeepportraitSwitcher,true,5);
             if (mIntentMode == CaptureModule.INTENT_MODE_CAPTURE) {
                 setLocation(mShutter, false, 2);
                 setLocation(mCancelButton, false, 0.85f);
@@ -492,8 +501,9 @@ public class OneUICameraControls extends RotatableLayout {
         mOrientation = orientation;
         View[] views = {
                 mSceneModeSwitcher, mFilterModeSwitcher, mFrontBackSwitcher,
-                mTsMakeupSwitcher, mFlashButton, mPreview, mMute, mShutter, mVideoShutter,
-                mMakeupSeekBarLowText, mMakeupSeekBarHighText, mPauseButton, mExitBestPhotpMode
+                mTsMakeupSwitcher, mFlashButton, mDeepportraitSwitcher, mPreview, mMute,
+                mShutter, mVideoShutter, mMakeupSeekBarLowText, mMakeupSeekBarHighText,
+                mPauseButton, mExitBestPhotpMode
         };
 
         for (View v : views) {
@@ -553,10 +563,16 @@ public class OneUICameraControls extends RotatableLayout {
     }
 
     public void setProMode(boolean promode) {
+        if (mProModeOn && !promode)
+            mProMode.resetEVandWB();
         mProModeOn = promode;
         initializeProMode(mProModeOn);
         mProMode.reinit();
         resetProModeIcons();
+    }
+
+    public int getPromode() {
+        return mProMode != null ? mProMode.getMode() : -99;
     }
 
     private void resetProModeIcons() {

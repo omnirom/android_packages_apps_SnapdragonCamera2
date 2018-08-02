@@ -39,30 +39,29 @@
       "pref_camera2_mpo_key":"off",
       "pref_camera2_longshot_key":"off"}
     ,
-    "100":
-      {"pref_camera2_longshot_key":"off",
-      "pref_camera2_mono_only_key":"off",
-      "pref_camera2_flashmode_key":"off",
-      "pref_camera2_coloreffect_key":"0"}
-    ,
     "0":
       {"pref_camera2_clearsight_key":"off",
       "pref_camera2_mono_preview_key":"off",
       "pref_camera2_mpo_key":"off"}
     ,
-    "18":
-      {"pref_camera2_coloreffect_key":"0"}
-    ,
-    "102":
-    {"pref_camera2_coloreffect_key":"0"}
-    ,
-    "101":
-    {"pref_camera2_coloreffect_key":"0"}
-   ,
     "3":
-    {"pref_camera2_coloreffect_key":"0"}
+    {"pref_camera2_coloreffect_key":"0",
+      "pref_camera2_longshot_key":"off"}
     ,
     "4":
+    {"pref_camera2_coloreffect_key":"0"}
+    ,
+    "5":
+    {"pref_camera2_coloreffect_key":"0",
+      "pref_camera2_longshot_key":"off"}
+    ,
+    "8":
+    {"pref_camera2_coloreffect_key":"0"}
+     ,
+    "9":
+    {"pref_camera2_coloreffect_key":"0"}
+    ,
+    "10":
     {"pref_camera2_coloreffect_key":"0"}
     ,
     "13":
@@ -71,17 +70,21 @@
     "15":
     {"pref_camera2_coloreffect_key":"0"}
     ,
-    "10":
+    "18":
     {"pref_camera2_coloreffect_key":"0"}
     ,
-    "5":
+    "100":
+    {"pref_camera2_longshot_key":"off",
+      "pref_camera2_mono_only_key":"off",
+      "pref_camera2_flashmode_key":"off",
+      "pref_camera2_coloreffect_key":"0"}
+    ,
+    "101":
     {"pref_camera2_coloreffect_key":"0"}
     ,
-    "8":
-    {"pref_camera2_coloreffect_key":"0"}
-     ,
-    "9":
-    {"pref_camera2_coloreffect_key":"0"}
+    "102":
+    {"pref_camera2_coloreffect_key":"0",
+      "pref_camera2_longshot_key":"off"}
     ,
     "103":
     {"pref_camera2_coloreffect_key":"0"}
@@ -95,16 +98,23 @@
       "pref_camera2_longshot_key":"off"}
     ,
     "106":
-    {"pref_camera2_coloreffect_key":"0"}
+    {"pref_camera2_coloreffect_key":"0",
+      "pref_camera2_longshot_key":"off"}
     ,
     "107":
-    {"pref_camera2_coloreffect_key":"0"}
+    {"pref_camera2_coloreffect_key":"0",
+      "pref_camera2_longshot_key":"off"}
     ,
     "108":
-    {"pref_camera2_coloreffect_key":"0"}
+    {"pref_camera2_coloreffect_key":"0",
+      "pref_camera2_longshot_key":"off"}
     ,
     "109":
     {"pref_camera2_coloreffect_key":"0"}
+    ,
+    "110":
+    {"pref_camera2_coloreffect_key":"0",
+      "pref_camera2_longshot_key":"off"}
   },
   "pref_camera2_clearsight_key":
   {
@@ -124,6 +134,7 @@
     "0":{},
     "default":
       {"pref_camera2_facedetection_key":"on",
+       "pref_camera2_picturesize_key":"3264x2448",
        "pref_camera2_video_quality_key":"720x480",
        "pref_camera2_longshot_key":"off"}
   },
@@ -131,5 +142,12 @@
   {
     "on":{"pref_camera2_longshot_key":"off"},
     "off":{}
+  },
+  "pref_camera2_videoencoder_key":
+  {
+    "mpeg-4-sp":{"pref_camera2_videoencoderprofile_key":"off"},
+    "h263":{"pref_camera2_videoencoderprofile_key":"off"},
+    "h264":{"pref_camera2_videoencoderprofile_key":"off"},
+    "h265":{}
   }
 }

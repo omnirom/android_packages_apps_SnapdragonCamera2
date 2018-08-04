@@ -197,7 +197,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     private int mBottomMargin = 0;
     private ViewGroup mFilterLayout;
 
-    private View mFilterModeSwitcher;
+    private ImageView mFilterModeSwitcher;
     private View mSceneModeSwitcher;
     private View mFrontBackSwitcher;
     private ImageView mMakeupButton;
@@ -310,7 +310,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mShutterButton = (ShutterButton) mRootView.findViewById(R.id.shutter_button);
         mVideoButton = (ShutterButton) mRootView.findViewById(R.id.video_button);
         mExitBestMode = (ImageView) mRootView.findViewById(R.id.exit_best_mode);
-        mFilterModeSwitcher = mRootView.findViewById(R.id.filter_mode_switcher);
+        mFilterModeSwitcher = (ImageView) mRootView.findViewById(R.id.filter_mode_switcher);
         mSceneModeSwitcher = mRootView.findViewById(R.id.scene_mode_switcher);
         mFrontBackSwitcher = mRootView.findViewById(R.id.front_back_switcher);
         mMakeupButton = (ImageView) mRootView.findViewById(R.id.ts_makeup_switcher);
@@ -637,10 +637,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mActivity.runOnUiThread(new Runnable() {
             public void run() {
                 if(value != null && !value.equals("0")) {
-                    mMakeupButton.setImageResource(R.drawable.beautify_on);
+                    mMakeupButton.setImageResource(R.drawable.ic_settings_beautify_on);
                     mMakeupSeekBarLayout.setVisibility(View.VISIBLE);
                 } else {
-                    mMakeupButton.setImageResource(R.drawable.beautify);
+                    mMakeupButton.setImageResource(R.drawable.ic_settings_beautify);
                     mMakeupSeekBarLayout.setVisibility(View.GONE);
                 }
             }
@@ -1382,6 +1382,13 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mMakeupButton.setEnabled(enableMakeupMenu);
         mFilterModeSwitcher.setEnabled(enableFilterMenu);
         mSceneModeSwitcher.setEnabled(enableSceneMenu);
+
+        // xxxx
+        if (colorEffect != 0 || mFilterMenuStatus == FILTER_MENU_ON) {
+            mFilterModeSwitcher.setImageResource(R.drawable.ic_settings_filter_on);
+        } else {
+            mFilterModeSwitcher.setImageResource(R.drawable.ic_settings_filter);
+        }
     }
 
     public boolean arePreviewControlsVisible() {

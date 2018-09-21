@@ -615,6 +615,11 @@ public class PanoCaptureModule implements CameraModule, PhotoController {
     }
 
     @Override
+    public boolean isEnabledRecordingLocation() {
+        return false;
+    }
+
+    @Override
     public void setPreferenceForTest(String key, String value) {
     }
 

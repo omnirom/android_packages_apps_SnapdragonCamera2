@@ -918,6 +918,12 @@ public class WideAnglePanoramaModule
     }
 
     @Override
+    public boolean isEnabledRecordingLocation() {
+        return mPreferences.getString(CameraSettings.KEY_RECORD_LOCATION,
+                RecordLocationPreference.VALUE_OFF).equals(RecordLocationPreference.VALUE_ON);
+    }
+
+    @Override
     public void setPreferenceForTest(String key, String value) {
 
     }

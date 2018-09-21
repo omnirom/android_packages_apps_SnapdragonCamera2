@@ -77,5 +77,7 @@ public interface CameraModule {
 
     public void enableRecordingLocation(boolean enable);
 
+    public boolean isEnabledRecordingLocation();
+
     public void setPreferenceForTest(String key, String value);
 }

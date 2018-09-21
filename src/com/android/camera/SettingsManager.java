@@ -415,7 +415,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             try {
                 newValue = dependencyList.getString(keyToProcess);
             } catch (JSONException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
                 continue;
             }
             Values values = new Values(getValue(keyToProcess), newValue);
@@ -484,7 +484,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             try {
                 newValue = dependencyList.getString(keyToTurnOff);
             } catch (JSONException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
                 continue;
             }
             if (newValue == null) continue;
@@ -1786,7 +1786,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
             ex.printStackTrace();
             return null;
         } catch (JSONException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return null;
         }
     }
@@ -1796,7 +1796,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             return mDependency.getJSONObject(key);
         } catch (JSONException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return null;
         }
     }
@@ -1810,7 +1810,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         try {
             return dependencyMap.getJSONObject(value);
         } catch (JSONException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return null;
         }
     }

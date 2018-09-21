@@ -3590,6 +3590,12 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     @Override
+    public boolean isEnabledRecordingLocation() {
+        return mSettingsManager.getValue(SettingsManager.KEY_RECORD_LOCATION)
+                .equals(RecordLocationPreference.VALUE_ON);
+    }
+
+    @Override
     public void setPreferenceForTest(String key, String value) {
         mSettingsManager.setValue(key, value);
     }

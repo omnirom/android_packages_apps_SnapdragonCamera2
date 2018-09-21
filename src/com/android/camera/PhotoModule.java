@@ -661,7 +661,7 @@ public class PhotoModule
     // camera only
     private void locationFirstRun() {
         boolean enableRecordingLocation = false;
-        if (mActivity.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (mActivity.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             enableRecordingLocation = true;
         }
@@ -697,6 +697,12 @@ public class PhotoModule
         setLocationPreference(enable ? RecordLocationPreference.VALUE_ON
                 : RecordLocationPreference.VALUE_OFF);
         mLocationManager.recordLocation(enable);
+    }
+
+    @Override
+    public boolean isEnabledRecordingLocation() {
+        return mPreferences.getString(CameraSettings.KEY_RECORD_LOCATION,
+                RecordLocationPreference.VALUE_OFF).equals(RecordLocationPreference.VALUE_ON);
     }
 
     @Override

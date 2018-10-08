@@ -152,23 +152,37 @@ public class SettingsManager implements ListMenu.SettingsListener {
     public static final String KEY_AUTO_HDR = "pref_camera2_auto_hdr_key";
     public static final String KEY_HDR = "pref_camera2_hdr_key";
     public static final String KEY_VIDEO_HDR_VALUE = "pref_camera2_video_hdr_key";
+    public static final String KEY_CAPTURE_MFNR_VALUE = "pref_camera2_capture_mfnr_key";
+    public static final String KEY_CAPTURE_MFSR_VALUE = "pref_camera2_capture_mfsr_key";
     public static final String KEY_SAVERAW = "pref_camera2_saveraw_key";
     public static final String KEY_ZOOM = "pref_camera2_zoom_key";
     public static final String KEY_SHARPNESS_CONTROL_MODE = "pref_camera2_sharpness_control_key";
     public static final String KEY_AF_MODE = "pref_camera2_afmode_key";
     public static final String KEY_EXPOSURE_METERING_MODE = "pref_camera2_exposure_metering_key";
+
+    //manual 3A keys and parameter strings
     public static final String KEY_MANUAL_EXPOSURE = "pref_camera2_manual_exp_key";
     public static final String KEY_MANUAL_ISO_VALUE = "pref_camera2_manual_iso_key";
+    public static final String KEY_MANUAL_GAINS_VALUE = "pref_camera2_manual_gains_key";
     public static final String KEY_MANUAL_EXPOSURE_VALUE = "pref_camera2_manual_exposure_key";
+
+    public static final String KEY_MANUAL_WB = "pref_camera2_manual_wb_key";
+    public static final String KEY_MANUAL_WB_TEMPERATURE_VALUE =
+            "pref_camera2_manual_temperature_key";
+    public static final String KEY_MANUAL_WB_R_GAIN = "pref_camera2_manual_wb_r_gain";
+    public static final String KEY_MANUAL_WB_G_GAIN = "pref_camera2_manual_wb_g_gain";
+    public static final String KEY_MANUAL_WB_B_GAIN = "pref_camera2_manual_wb_b_gain";
+
     public static final String KEY_QCFA = "pref_camera2_qcfa_key";
     public static final String KEY_EIS_VALUE = "pref_camera2_eis_key";
     public static final String KEY_FOVC_VALUE = "pref_camera2_fovc_key";
     public static final String KEY_DEEPPORTRAIT_VALUE = "pref_camera2_deepportrait_key";
-    public static final String KEY_EARLY_PCR_VALUE = "pref_camera2_earlypcr_key";
     public static final String KEY_AWB_RAGIN_VALUE = "pref_camera2_awb_cct_rgain_key";
     public static final String KEY_AWB_GAGIN_VALUE = "pref_camera2_awb_cct_ggain_key";
     public static final String KEY_AWB_BAGIN_VALUE = "pref_camera2_awb_cct_bgain_key";
     public static final String KEY_AWB_CCT_VALUE = "pref_camera2_awb_cct_key";
+    public static final String KEY_AWB_DECISION_AFTER_TC_0 = "pref_camera2_awb_decision_after_tc_0";
+    public static final String KEY_AWB_DECISION_AFTER_TC_1 = "pref_camera2_awb_decision_after_tc_1";
     public static final String KEY_STATS_VISUALIZER_VALUE = "pref_camera2_stats_visualizer_key";
 
     public static final HashMap<String, Integer> KEY_ISO_INDEX = new HashMap<String, Integer>();
@@ -348,7 +362,7 @@ public class SettingsManager implements ListMenu.SettingsListener {
         mDependendsOnMap = new HashMap<>();
         mFilteredKeys = new HashSet<>();
         try {
-            if (cameraId < mCharacteristics.size() -1) {
+            if (mCharacteristics.size() > 0) {
                 mExtendedHFRSize = mCharacteristics.get(cameraId).get(CaptureModule.hfrFpsTable);
             }
         }catch(IllegalArgumentException exception) {
@@ -935,6 +949,38 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return pref.getEntryValues();
     }
 
+    public int[] getWBColorTemperatureRangeValues(int cameraId) {
+        int[] wbRange = null;
+        try {
+            wbRange =  mCharacteristics.get(cameraId).get(CaptureModule.WB_COLOR_TEMPERATURE_RANGE);
+            if (wbRange == null) {
+                Log.w(TAG, "Supported exposure range get null.");
+                return null;
+            }
+        } catch(NullPointerException e) {
+            Log.w(TAG, "Supported exposure range modes is null.");
+        } catch(IllegalArgumentException e) {
+            Log.w(TAG, "Supported exposure range modes occur IllegalArgumentException.");
+        }
+        return wbRange;
+    }
+
+    public float[] getWBGainsRangeValues(int cameraId) {
+        float[] rgbRange = null;
+        try {
+            rgbRange =  mCharacteristics.get(cameraId).get(CaptureModule.WB_RGB_GAINS_RANGE);
+            if (rgbRange == null) {
+                Log.w(TAG, "Supported gains range get null.");
+                return null;
+            }
+        } catch(NullPointerException e) {
+            Log.w(TAG, "Supported gains range modes is null.");
+        } catch(IllegalArgumentException e) {
+            Log.w(TAG, "Supported gains range modes occur IllegalArgumentException.");
+        }
+        return rgbRange;
+    }
+
     public long[] getExposureRangeValues(int cameraId) {
         long[] exposureRange = null;
         try {
@@ -1376,13 +1422,21 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     private List<String> getSupportedWhiteBalanceModes(int cameraId) {
-        int[] whiteBalanceModes = mCharacteristics.get(cameraId).get(CameraCharacteristics
-                .CONTROL_AWB_AVAILABLE_MODES);
-        List<String> modes = new ArrayList<>();
-        for (int mode : whiteBalanceModes) {
-            modes.add("" + mode);
+        try {
+            int[] whiteBalanceModes = null;
+            List<String> modes = new ArrayList<>();
+            if (mCharacteristics.size() > 0) {
+                whiteBalanceModes = mCharacteristics.get(cameraId).get(CameraCharacteristics
+                        .CONTROL_AWB_AVAILABLE_MODES);
+                for (int mode : whiteBalanceModes) {
+                    modes.add("" + mode);
+                }
+                return modes;
+            }
+        } catch (IndexOutOfBoundsException e) {
+            Log.e(TAG, "getSupportedWhiteBalanceModes occurs IndexOutOfBoundsException");
         }
-        return modes;
+        return null;
     }
 
     private List<String> getSupportedSceneModes(int cameraId) {

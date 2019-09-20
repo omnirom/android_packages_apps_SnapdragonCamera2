@@ -30,7 +30,6 @@ package org.codeaurora.snapcam.filter;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.Rect;
 import android.hardware.Camera.Size;
 import android.util.Base64;
@@ -50,8 +49,6 @@ import com.adobe.xmp.XMPException;
 import com.adobe.xmp.XMPMeta;
 import com.adobe.xmp.XMPMetaFactory;
 
-import static android.graphics.Color.rgb;
-
 public class GDepth{
     private final static String TAG = "Flow_GDepth";
     public final static String NAMESPACE_URL = "http://ns.google.com/photos/1.0/depthmap/";
@@ -69,17 +66,14 @@ public class GDepth{
 
     public final static String FORMAT_RANGE_INVERSE="RangeInverse";
     public final static String FORMAT_RANGLE_LINEAR = "RangeLinear";
-    public final static String FORMAT_8_BIT = "8-bit";
-
     private final static String MIME = "image/jpeg";
 
     private DepthMap mDepthMap;
     private String mData;
-    private final String mFormat = FORMAT_8_BIT;
+    private int mNear;
+    private int mFar;
+    private final String mFormat = "RangeLinear";
     private int[] mMap;
-    private byte[] mGdepthJpeg;
-    private Rect mRoi;
-
 
     static {
         try {
@@ -92,23 +86,28 @@ public class GDepth{
 
     private GDepth(DepthMap depthMap){
         mDepthMap = depthMap;
-        mRoi = depthMap.roi;
-        if (depthMap != null && depthMap.buffer != null) {
-            mMap = new int[depthMap.buffer.length];
+        mMap = new int[depthMap.buffer.length];
 
-            for( int i=0; i < mMap.length; ++i ) {
-                int gray = depthMap.buffer[i] & 0xff;
-                int color = Color.rgb(gray,gray,gray);
-                mMap[i] = color;
+        for( int i=0; i < mMap.length; ++i ) {
+            mMap[i] = (256+depthMap.buffer[i])%256;
+        }
+        mNear = mFar = mMap[0];
+        for(int d : mMap ) {
+            if ( d < mNear) {
+                mNear = d;
+            }else if ( d > mFar) {
+                mFar = d;
             }
         }
     }
 
-    private GDepth(byte[] gdepthJpeg) {
-        mGdepthJpeg = gdepthJpeg;
+    public int getNear() {
+        return mNear;
     }
 
-
+    public int getFar(){
+        return mFar;
+    }
 
     public String getFormat(){
         return mFormat;
@@ -118,50 +117,26 @@ public class GDepth{
         return MIME;
     }
 
-    public int getNear() {
-        return 0;
-    }
-
-    public int getFar() {
-        return 255;
-    }
-
     public String getData(){
         return mData;
     }
 
     public Rect getRoi() {
-        return mRoi;
-    }
-
-    public void setRoi(Rect roi) {
-        mRoi = roi;
+        return mDepthMap.roi;
     }
     public static GDepth createGDepth(DepthMap depthMap){
         GDepth gDepth = new GDepth(depthMap);
-        if ( gDepth.encoding() ) {
+        if (  gDepth.encoding() ) {
             return gDepth;
         }
         return null;
     }
 
-    public static GDepth createGDepth(byte[] gdepthJpeg) {
-        GDepth gDepth = new GDepth(gdepthJpeg);
-        if (gDepth.encodeDepthmapJpeg()) {
-            return gDepth;
-        }
-        return null;
-    }
-
-    private boolean encoding(){
+    private  boolean encoding(){
         Log.d(TAG, "encoding");
         boolean result = false;
-        Bitmap bitmap = Bitmap.createBitmap(
-                mMap,mDepthMap.width, mDepthMap.height, Bitmap.Config.ARGB_8888);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-        byte[] jpegBytes = outputStream.toByteArray();
-        mGdepthJpeg = jpegBytes;
+        int[]  grayscaleImage = convertIntoImage(mMap);
+        byte[] jpegBytes = compressToJPEG(grayscaleImage );
         if (jpegBytes != null ) {
             String base64String = serializeAsBase64Str(jpegBytes);
             result = true;
@@ -173,35 +148,34 @@ public class GDepth{
         return result;
     }
 
-    private boolean encodeDepthmapJpeg() {
-        Log.d(TAG, "encodeDepthmapJpeg");
-        boolean result = false;
-        if (mGdepthJpeg != null ) {
-            String base64String = serializeAsBase64Str(mGdepthJpeg);
-            result = true;
-            mData = base64String;
-        }else{
-            Log.e(TAG, "compressToJPEG failure");
+    private  int[] convertIntoImage(int[] depthMap) {
+        int[] imageBuffer = new int[depthMap.length];
+        float dividend = mFar-mNear;
+        for ( int i =0; i < imageBuffer.length; ++i) {
+            if ( depthMap[i] == 0 && mNear == 0 ) {
+                imageBuffer[i] = 0;
+            }else{
+                imageBuffer[i] = getRangeLinearDepth(depthMap[i], mNear, dividend);
+            }
         }
-
-        return result;
+        return imageBuffer;
     }
 
-    public Bitmap getGdepthBitmap() {
-        Bitmap bitmap = Bitmap.createBitmap(
-                mMap,mDepthMap.width, mDepthMap.height, Bitmap.Config.ARGB_8888);
-        return bitmap;
+    private   int getRangeLinearDepth(int depth, int near, float dividend) {
+        return (int)(255*(depth-near)/dividend);
     }
 
-    public Bitmap getBitGdepthBitmap() {
-        int[] data = new int[mMap.length];
-        for (int i = 0; i < data.length; ++i) {
-            int p = mMap[i];
-            data[i] = (p & 0xff) << 24;
+    private   int getRangeLinearDepth(int depth, int near, int far) {
+        return (int)(255*(depth-near)/(float)(far-near));
+    }
+
+    private  byte[] compressToJPEG(int[] image) {
+        Log.d(TAG, "compressToJPEG int[].size=" + image.length);
+        byte[] bitsBuffer = new byte[image.length];
+        for(int i=0; i < image.length; ++i){
+            bitsBuffer[i] = (byte)image[i];
         }
-        Bitmap bitmap = Bitmap.createBitmap(
-                data,mDepthMap.width, mDepthMap.height, Bitmap.Config.ALPHA_8);
-        return bitmap;
+        return compressToJPEG(bitsBuffer);
     }
 
     private  byte[] compressToJPEG(byte[] image) {
@@ -214,10 +188,6 @@ public class GDepth{
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         bmp.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
         return outputStream.toByteArray();
-    }
-
-    public byte[] getDepthJpeg() {
-        return mGdepthJpeg;
     }
 
     private  String serializeAsBase64Str(byte[] image) {
@@ -272,6 +242,7 @@ public class GDepth{
         public int width;
         public int height;
         public Rect roi;
+        public byte[] rawDepth;
         public DepthMap(int width, int height){
             this.width = width;
             this.height = height;
@@ -280,7 +251,8 @@ public class GDepth{
 
 
     private GDepth(int near, int far, String data) {
-
+        this.mNear = near;
+        this.mFar = far;
         this.mData = data;
     }
     public static GDepth createGDepth(XMPMeta xmpMeta){
@@ -330,5 +302,6 @@ public class GDepth{
         //conver to depth value
 
         return false;
+
     }
 }

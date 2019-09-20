@@ -343,8 +343,6 @@ public class PhotoModule
                     : null;
 
     private final CameraErrorCallback mErrorCallback = new CameraErrorCallback();
-    private final StatsCallback mStatsCallback = new StatsCallback();
-    private final MetaDataCallback mMetaDataCallback = new MetaDataCallback();
     private long mFocusStartTime;
     private long mShutterCallbackTime;
     private long mPostViewPictureCallbackTime;
@@ -1185,115 +1183,6 @@ public class PhotoModule
         }
     }
 
-    private final class StatsCallback
-           implements android.hardware.Camera.CameraDataCallback {
-            @Override
-        public void onCameraData(int [] data, android.hardware.Camera camera) {
-            //if(!mPreviewing || !mHiston || !mFirstTimeInitialized){
-            if(!mHiston || !mFirstTimeInitialized){
-                return;
-            }
-            //The first element in the array stores max hist value . Stats data begin from second value
-            synchronized(statsdata) {
-                System.arraycopy(data,0,statsdata,0,STATS_DATA);
-            }
-            mActivity.runOnUiThread(new Runnable() {
-                public void run() {
-                    if(mGraphView != null)
-                        mGraphView.PreviewChanged();
-                }
-           });
-        }
-    }
-
-    private final class MetaDataCallback
-           implements android.hardware.Camera.CameraMetaDataCallback{
-        private static final int QCAMERA_METADATA_HDR = 3;
-        private static final int QCAMERA_METADATA_RTB = 5;
-        private int mLastMessage = -1;
-
-        @Override
-        public void onCameraMetaData (byte[] data, android.hardware.Camera camera) {
-            int metadata[] = new int[3];
-            if (data.length >= 12) {
-                for (int i =0;i<3;i++) {
-                    metadata[i] = byteToInt( (byte []) data, i*4);
-                }
-                /* Checking if the meta data is for auto HDR */
-                if (metadata[0] == QCAMERA_METADATA_HDR) {
-                    if (metadata[2] == 1) {
-                        mAutoHdrEnable = true;
-                        mActivity.runOnUiThread(new Runnable() {
-                            public void run() {
-                                if (mDrawAutoHDR != null)
-                                    mDrawAutoHDR.AutoHDR();
-                            }
-                        });
-                    }
-                    else {
-                        mAutoHdrEnable = false;
-                        mActivity.runOnUiThread(new Runnable() {
-                            public void run() {
-                                if (mDrawAutoHDR != null)
-                                    mDrawAutoHDR.AutoHDR();
-                            }
-                        });
-                    }
-                } else if (metadata[0] == QCAMERA_METADATA_RTB) {
-                    final String tip;
-                    Log.d(TAG,"QCAMERA_METADATA_RTB msgtype =" +metadata[2]);
-                    switch (metadata[2]) {
-                        case TOO_FAR:
-                            tip = "Too far";
-                            break;
-                        case TOO_NEAR:
-                            tip = "Too near";
-                            break;
-                        case LOW_LIGHT:
-                            tip = "Low light";
-                            break;
-                        case SUBJECT_NOT_FOUND:
-                            tip = "Object not found";
-                            break;
-                        case DEPTH_EFFECT_SUCCESS:
-                            tip = "Depth effect success";
-                            break;
-                        case NO_DEPTH_EFFECT:
-                            tip = "NO depth effect";
-                            break;
-                        default:
-                            tip = "Message type =" + metadata[2];
-                            break;
-                    }
-                    mDepthSuccess = metadata[2] == DEPTH_EFFECT_SUCCESS;
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (mBokehTipText != null) {
-                                if (!mDepthSuccess) {
-                                    mBokehTipText.setVisibility(View.VISIBLE);
-                                    mBokehTipText.setText(tip);
-                                } else {
-                                    mBokehTipText.setVisibility(View.GONE);
-                                }
-                            }
-                            mUI.enableBokehFocus(mDepthSuccess);
-                        }
-                    });
-                }
-            }
-        }
-
-        private int byteToInt (byte[] b, int offset) {
-            int value = 0;
-            for (int i = 0; i < 4; i++) {
-                int shift = (4 - 1 - i) * 8;
-                value += (b[(3-i) + offset] & 0x000000FF) << shift;
-            }
-            return value;
-        }
-    }
-
     private final class PostViewPictureCallback
             implements CameraPictureCallback {
         @Override
@@ -1613,40 +1502,12 @@ public class PhotoModule
                             exif.setTag(directionRefTag);
                             exif.setTag(directionTag);
                         }
-                        String mPictureFormat = mParameters.get(KEY_PICTURE_FORMAT);
-                         Log.d(TAG, "capture:" + title + "." + mPictureFormat);
-                         if (mIsBokehMode) {
-                             if (!PERSIST_BOKEH_DEBUG_CHECK && mSaveBokehXmp) {
-                                 if (jpegData != null && mCallTime == 3) {
-                                     if (mOrigin != null && mBokeh != null) {
-                                         GImage gImage = new GImage(mOrigin, "image/jpeg");
-                                         GDepth gDepth = GDepth.createGDepth(mDepth);
-                                         gDepth.setRoi(new Rect(0,0,width,height));
-                                         mActivity.getMediaSaveService().addXmpImage(mBokeh,gImage,
-                                                 gDepth,"bokeh_"+title,date,mLocation,width,height,
-                                                 orientation,exif,mOnMediaSavedListener,
-                                                 mContentResolver,mPictureFormat);
-                                     }
-                                 }
-                             } else {
-                                 if (mCallTime == 3) {
-                                     mActivity.getMediaSaveService().addImage(mDepth,
-                                             title, date, mLocation, width, height,
-                                             orientation, exif, mOnMediaSavedListener,
-                                             mContentResolver, mPictureFormat);
-                                 } else {
-                                     mActivity.getMediaSaveService().addImage(
-                                             jpegData, title, date, mLocation, width, height,
-                                             orientation, exif, mOnMediaSavedListener,
-                                             mContentResolver, mPictureFormat);
-                                 }
-                             }
-                         } else {
-                             mActivity.getMediaSaveService().addImage(
-                                     jpegData, title, date, mLocation, width, height,
-                                     orientation, exif, mOnMediaSavedListener,
-                                     mContentResolver, mPictureFormat);
-                         }
+			String mPictureFormat = mParameters.get(KEY_PICTURE_FORMAT);
+                        Log.d(TAG, "capture:" + title + "." + mPictureFormat);
+                            mActivity.getMediaSaveService().addImage(
+                                    jpegData, title, date, mLocation, width, height,
+                                    orientation, exif, mOnMediaSavedListener,
+                                    mContentResolver, mPictureFormat);
                             if (mRefocus && mReceivedSnapNum == 7) {
                                  mUI.showRefocusToast(mRefocus);
                             }
@@ -1862,7 +1723,6 @@ public class PhotoModule
         if(mHiston) {
             if (mSnapshotMode != CameraInfoWrapper.CAMERA_SUPPORT_MODE_ZSL) {
                 mHiston = false;
-                mCameraDevice.setHistogramMode(null);
             }
             mActivity.runOnUiThread(new Runnable() {
                 public void run() {
@@ -2248,38 +2108,6 @@ public class PhotoModule
             }
         }
 
-        String bokehMode = mPreferences.getString(
-                CameraSettings.KEY_BOKEH_MODE,
-                mActivity.getString(R.string.pref_camera_bokeh_mode_default));
-        if (!bokehMode.equals(mActivity.getString(
-                R.string.pref_camera_bokeh_mode_entry_value_disable))) {
-            mIsBokehMode = true;
-            if (mCameraDevice != null) {
-                mCameraDevice.setMetadataCb(mMetaDataCallback);
-            }
-            mUI.overrideSettings(CameraSettings.KEY_FLASH_MODE, Parameters.FLASH_MODE_OFF);
-            mUI.overrideSettings(CameraSettings.KEY_SCENE_MODE, Parameters.SCENE_MODE_AUTO);
-            final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(mActivity);
-            final int degree = prefs.getInt(CameraSettings.KEY_BOKEH_BLUR_VALUE,50);
-            mUI.getBokehDegreeBar().setProgress(degree);
-            mUI.getBokehDegreeBar().setOnSeekBarChangeListener(mBlurDegreeListener);
-            mUI.enableBokehRender(true);
-            mUI.setBokehRenderDegree(degree);
-            mBokehTipText.setVisibility(View.VISIBLE);
-        } else {
-            mIsBokehMode = false;
-            if (mCameraDevice != null) {
-                mCameraDevice.setMetadataCb(null);
-            }
-            mUI.overrideSettings(CameraSettings.KEY_BOKEH_MPO,
-                    mActivity.getString(R.string.pref_camera_bokeh_mpo_default));
-            mUI.overrideSettings(CameraSettings.KEY_BOKEH_BLUR_VALUE,
-                    mActivity.getString(R.string.pref_camera_bokeh_blur_degree_default));
-            mUI.getBokehDegreeBar().setOnSeekBarChangeListener(null);
-            mUI.getBokehDegreeBar().setVisibility(View.GONE);
-            mUI.enableBokehRender(false);
-            mBokehTipText.setVisibility(View.GONE);
-        }
     }
 
     private void overrideCameraSettings(final String flashMode,
@@ -3836,7 +3664,6 @@ public class PhotoModule
                     }
                 });
                 mParameters.setSceneMode("asd");
-                mCameraDevice.setMetadataCb(mMetaDataCallback);
             }
             else {
                 mAutoHdrEnable = false;
@@ -3938,7 +3765,6 @@ public class PhotoModule
                         }
                     }
                 });
-                mCameraDevice.setHistogramMode(mStatsCallback);
                 mHiston = true;
             } else {
                 mHiston = false;
@@ -3948,7 +3774,6 @@ public class PhotoModule
                              mGraphView.setVisibility(View.INVISIBLE);
                          }
                     });
-                mCameraDevice.setHistogramMode(null);
             }
         }
 

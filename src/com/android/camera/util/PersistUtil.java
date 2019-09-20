@@ -47,9 +47,11 @@ public class PersistUtil {
     private static final boolean PERSIST_SKIP_MEMORY_CHECK =
             SystemProperties.getBoolean("persist.sys.camera.perf.skip_memck", false);
     private static final int PERSIST_LONGSHOT_SHOT_LIMIT =
-            SystemProperties.getInt("persist.sys.camera.longshot.shotnum", 30);
+            SystemProperties.getInt("persist.sys.camera.longshot.shotnum", 60);
     private static final String PERSIST_CAMERA_PREVIEW_SIZE =
             SystemProperties.get("persist.sys.camera.preview.size", "");
+    private static final String PERSIST_CAMERA_VIDEO_SNAPSHOTSIZE =
+            SystemProperties.get("persist.sys.camera.video.snapshotsize", "");
     private static final String PERSIST_CAMERA_VIDEO_SIZE =
             SystemProperties.get("persist.sys.camera.video.size", "");
     private static final boolean PERSIST_CAMERA_CAMERA2 =
@@ -78,7 +80,7 @@ public class PersistUtil {
     private static final int CIRCULAR_BUFFER_SIZE_PERSIST =
             SystemProperties.getInt("persist.sys.camera.zsl.buffer.size", 5);
     private static final int SAVE_TASK_MEMORY_LIMIT_IN_MB =
-            SystemProperties.getInt("persist.sys.camera.perf.memlimit", 60);
+            SystemProperties.getInt("persist.sys.camera.perf.memlimit", 120);
     private static final boolean PERSIST_CAMERA_UI_AUTO_TEST_ENABLED =
             SystemProperties.getBoolean("persist.sys.camera.ui.auto_test", false);
     private static final boolean PERSIST_CAMERA_SAVE_IN_SD_ENABLED =
@@ -93,6 +95,8 @@ public class PersistUtil {
             SystemProperties.getBoolean("persist.sys.camera.perf.skip_memck", false);
     private static final boolean PERSIST_ZZHDR_ENABLED =
             SystemProperties.getBoolean("persist.sys.camera.zzhdr.enable", false);
+    private static final boolean PERSIST_SEND_REQUEST_AFTER_FLUSH =
+            SystemProperties.getBoolean("persist.sys.camera.send_request_after_flush", false);
     private static final int PERSIST_PREVIEW_SIZE =
             SystemProperties.getInt("persist.sys.camera.preview.size", 0);
     private static final long PERSIST_TIMESTAMP_LIMIT =
@@ -121,6 +125,8 @@ public class PersistUtil {
             SystemProperties.get("persist.sys.camera.display.umax", "");
     private static final String PERSIST_DISPLAY_LMAX =
             SystemProperties.get("persist.sys.camera.display.lmax", "");
+    private static final int PERSIST_BURST_PREVIEW_REQUEST_NUMS =
+            SystemProperties.getInt("persist.sys.camera.burst.preview.nums", 0);
 
     public static int getMemoryLimit() {
         return PERSIST_MEMORY_LIMIT;
@@ -148,6 +154,10 @@ public class PersistUtil {
             }
         }
         return result;
+    }
+
+    public static String getVideoSnapshotSize(){
+        return PERSIST_CAMERA_VIDEO_SNAPSHOTSIZE;
     }
 
     public static Point getCameraVideoSize() {
@@ -249,6 +259,10 @@ public class PersistUtil {
         return PERSIST_ZZHDR_ENABLED;
     }
 
+    public static boolean isSendRequestAfterFlush() {
+        return PERSIST_SEND_REQUEST_AFTER_FLUSH;
+    }
+
     public static int getPreviewSize(){
         //Read Preview Resolution from adb command
         //value: 0(default) - Default value as per snapshot aspect ratio
@@ -311,4 +325,7 @@ public class PersistUtil {
         return PERSIST_DISPLAY_LMAX;
     }
 
+    public static int isBurstShotFpsNums() {
+        return PERSIST_BURST_PREVIEW_REQUEST_NUMS;
+    }
 }

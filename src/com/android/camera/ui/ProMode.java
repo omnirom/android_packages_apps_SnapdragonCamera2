@@ -239,7 +239,6 @@ public class ProMode extends View {
             }
             int index = mSettingsManager.getValueIndex(key);
             updateSlider(length);
-
             for (int i = 0; i < length; i++) {
                 View v;
                 if (mMode == WHITE_BALANCE_MODE) {

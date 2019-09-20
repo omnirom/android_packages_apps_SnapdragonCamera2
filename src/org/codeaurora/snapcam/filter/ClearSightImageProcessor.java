@@ -1276,9 +1276,9 @@ public class ClearSightImageProcessor {
 
                 GDepth gDepth = GDepth.createGDepth(mDepthMap);
 
-                mMediaSaveService.addXmpImage(
+                mMediaSaveService.addClearsightImage(
                         clearSightBytes != null ? clearSightBytes : bayerBytes,
-                        mGImage, gDepth,title, date, null,
+                        mGImage, mDepthMap,title, date, null,
                         width, height, orientation, exif,
                         mMediaSavedListener,
                         mMediaSaveService.getContentResolver(), "jpeg");

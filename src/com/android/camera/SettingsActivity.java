@@ -35,8 +35,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
 import android.os.Bundle;
 import android.preference.ListPreference;
+import android.preference.MultiSelectListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceGroup;
@@ -47,6 +49,7 @@ import android.preference.SwitchPreference;
 import android.view.Window;
 import android.view.WindowManager;
 import android.util.Log;
+import android.util.Size;
 import android.widget.Toast;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -57,6 +60,7 @@ import org.omnirom.snap.R;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.ui.RotateTextToast;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,12 +90,28 @@ public class SettingsActivity extends PreferenceActivity {
             } else if (p instanceof ListPreference){
                 value = ((ListPreference) p).getValue();
                 mSettingsManager.setValue(key, value);
+            } else if (p instanceof MultiSelectListPreference) {
+                Set<String> valueSet = ((MultiSelectListPreference)p).getValues();
+                mSettingsManager.setValue(key,valueSet);
             }
             if (key.equals(SettingsManager.KEY_VIDEO_QUALITY)) {
                 updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
                 updatePreference(SettingsManager.KEY_VIDEO_ENCODER);
             }else if ( key.equals(SettingsManager.KEY_VIDEO_ENCODER) ) {
                 updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
+            } else if ( key.equals(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE) ) {
+                value = ((ListPreference) p).getValue();
+                if (!value.equals("off")) {
+                    int fpsRate = Integer.parseInt(value.substring(3));
+                    if (fpsRate == 480) {
+                        mSettingsManager.filterVideoDurationFor480fps();
+                    } else {
+                        mSettingsManager.filterVideoDuration();
+                    }
+                } else {
+                    mSettingsManager.filterVideoDuration();
+                }
+                updatePreference(SettingsManager.KEY_VIDEO_DURATION);
             }
             List<String> list = mSettingsManager.getDependentKeys(key);
             if (list != null) {
@@ -118,22 +138,26 @@ public class SettingsActivity extends PreferenceActivity {
                     UpdateManualExposureSettings();
                 }
 
-                if ( pref.getKey().equals(SettingsManager.KEY_QCFA) ) {
-                    mSettingsManager.updateQcfaPictureSize();
+                if ( pref.getKey().equals(SettingsManager.KEY_QCFA) ||
+                        pref.getKey().equals(SettingsManager.KEY_PICTURE_FORMAT) ) {
+                    mSettingsManager.updatePictureAndVideoSize();
                     updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+                    updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
                 }
 
                 if ( pref.getKey().equals(SettingsManager.KEY_VIDEO_HDR_VALUE) ) {
-                    ListPreference autoHdrPref = (ListPreference) findPreference(
-                            mSettingsManager.KEY_AUTO_HDR);
-                    if (pref.getSummary().equals("enable")) {
-                        // when enable the Video HDR, app will disable the AUTO HDR.
-                        autoHdrPref.setEnabled(false);
-                        autoHdrPref.setValue("disable");
-                        mSettingsManager.setValue(mSettingsManager.KEY_AUTO_HDR, "disable");
-                    } else {
-                        autoHdrPref.setEnabled(true);
-                    }
+                    // when enable the Video HDR, app will disable the AUTO HDR.
+                    updateConflictOptionState(SettingsManager.KEY_AUTO_HDR, pref,
+                            "Disable", "disable");
+                }
+
+                if (pref.getKey().equals(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE)) {
+                    updateConflictOptionState(SettingsManager.KEY_VIDEO_TIME_LAPSE_FRAME_INTERVAL,
+                            pref, "Off", "0");
+                }
+
+                if ( (pref.getKey().equals(SettingsManager.KEY_MANUAL_WB)) ) {
+                    updateManualWBSettings();
                 }
 
                 if ( (pref.getKey().equals(SettingsManager.KEY_MANUAL_WB)) ) {
@@ -142,6 +166,25 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
     };
+
+    /**
+     * This method is to enable or disable the option which is conflict with changed setting
+     * @param conflictKey key you want to change after setting is changed
+     * @param changedPref preference of setting which is just changed
+     * @param checkedValue Judgement condition of enable or disable. It is Entry not EntryValue
+     * @param targetValue EntryValue you want to set into conflictKey when you disable it
+     */
+    private void updateConflictOptionState(String conflictKey, Preference changedPref,
+                                           String checkedValue, String targetValue) {
+        ListPreference conflictPref = (ListPreference) findPreference(conflictKey);
+        if (!changedPref.getSummary().equals(checkedValue)) {
+            conflictPref.setValue(targetValue);
+            mSettingsManager.setValue(conflictKey, targetValue);
+            conflictPref.setEnabled(false);
+        } else {
+            conflictPref.setEnabled(true);
+        }
+    }
 
     private void UpdateManualExposureSettings() {
         //dismiss all popups first, because we need to show edit dialog
@@ -159,8 +202,7 @@ public class SettingsActivity extends PreferenceActivity {
         final TextView ExpTimeText = new TextView(SettingsActivity.this);
         final EditText ExpTimeInput = new EditText(SettingsActivity.this);
         ISOinput.setInputType(InputType.TYPE_CLASS_NUMBER);
-        int floatType = InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_CLASS_NUMBER;
-        ExpTimeInput.setInputType(floatType);
+        ExpTimeInput.setInputType(InputType.TYPE_CLASS_NUMBER);
         alert.setTitle("Manual Exposure Settings");
         alert.setNegativeButton("Cancel",new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog,int id) {
@@ -212,8 +254,12 @@ public class SettingsActivity extends PreferenceActivity {
             });
             alert.show();
         } else if (manualExposureMode.equals(expTimePriority)) {
-            alert.setMessage("Enter exposure time in the range of " + exposureRange[0]
-                    + "ns to " + exposureRange[1] + "ns");
+            if (exposureRange == null) {
+                alert.setMessage("Get Exposure time range is NULL ");
+            } else {
+                alert.setMessage("Enter exposure time in the range of " + exposureRange[0]
+                        + "ns to " + exposureRange[1] + "ns");
+            }
             linear.addView(ExpTimeInput);
             linear.addView(ExpTimeText);
             alert.setView(linear);
@@ -229,7 +275,8 @@ public class SettingsActivity extends PreferenceActivity {
                             newExpTime = Double.parseDouble(expTime) + 1f;
                         }
                     }
-                    if (newExpTime <= exposureRange[1] && newExpTime >= exposureRange[0]) {
+                    if (exposureRange != null &&
+                            newExpTime <= exposureRange[1] && newExpTime >= exposureRange[0]) {
                         editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, expTime);
                         editor.apply();
                     } else {
@@ -244,8 +291,12 @@ public class SettingsActivity extends PreferenceActivity {
             final TextView ISORangeText = new TextView(this);
             final TextView ExpTimeRangeText = new TextView(this);
             ISORangeText.setText("Enter ISO in the range of " + isoRange[0] + " to " + isoRange[1]);
-            ExpTimeRangeText.setText("Enter exposure time in the range of " + exposureRange[0]
-                    + "ns to " + exposureRange[1] + "ns");
+            if (exposureRange == null) {
+                ExpTimeRangeText.setText("Get Exposure time range is NULL ");
+            } else {
+                ExpTimeRangeText.setText("Enter exposure time in the range of " + exposureRange[0]
+                        + "ns to " + exposureRange[1] + "ns");
+            }
             linear.addView(ISORangeText);
             linear.addView(ISOinput);
             linear.addView(ISOtext);
@@ -279,7 +330,8 @@ public class SettingsActivity extends PreferenceActivity {
                             newExpTime = Double.parseDouble(expTime) + 1f;
                         }
                     }
-                    if (newExpTime <= exposureRange[1] && newExpTime >= exposureRange[0]) {
+                    if (exposureRange != null &&
+                            newExpTime <= exposureRange[1] && newExpTime >= exposureRange[0]) {
                         editor.putString(SettingsManager.KEY_MANUAL_EXPOSURE_VALUE, expTime);
                         editor.apply();
                     } else {
@@ -603,12 +655,14 @@ public class SettingsActivity extends PreferenceActivity {
         }
 
         CharSequence[] entries = mSettingsManager.getEntries(SettingsManager.KEY_SCENE_MODE);
-        List<CharSequence> list = Arrays.asList(entries);
-        if (mDeveloperMenuEnabled && list != null && !list.contains("HDR")){
-            Preference p = findPreference("pref_camera2_hdr_key");
-            if (p != null){
-                PreferenceGroup developer = (PreferenceGroup)findPreference("developer");
-                developer.removePreference(p);
+        if (entries != null) {
+            List<CharSequence> list = Arrays.asList(entries);
+            if (mDeveloperMenuEnabled && list != null && !list.contains("HDR")){
+                Preference p = findPreference("pref_camera2_hdr_key");
+                if (p != null){
+                    PreferenceGroup developer = (PreferenceGroup)findPreference("developer");
+                    developer.removePreference(p);
+                }
             }
         }
 
@@ -627,17 +681,20 @@ public class SettingsActivity extends PreferenceActivity {
 
     private void initializePreferences() {
         updatePreference(SettingsManager.KEY_PICTURE_SIZE);
+        updatePreference(SettingsManager.KEY_PICTURE_FORMAT);
         updatePreference(SettingsManager.KEY_VIDEO_QUALITY);
         updatePreference(SettingsManager.KEY_EXPOSURE);
         updatePreference(SettingsManager.KEY_VIDEO_HIGH_FRAME_RATE);
         updatePreference(SettingsManager.KEY_VIDEO_ENCODER);
         updatePreference(SettingsManager.KEY_ZOOM);
         updatePreference(SettingsManager.KEY_SWITCH_CAMERA);
+        updatePreference(SettingsManager.KEY_VIDEO_DURATION);
+        updateMultiPreference(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
         updatePictureSizePreferenceButton();
         updateVideoHDRPreference();
-        updateStatsVisualizerPreference();
 
         Map<String, SettingsManager.Values> map = mSettingsManager.getValuesMap();
+        if (map == null) return;
         Set<Map.Entry<String, SettingsManager.Values>> set = map.entrySet();
 
         for (Map.Entry<String, SettingsManager.Values> entry : set) {
@@ -670,6 +727,15 @@ public class SettingsActivity extends PreferenceActivity {
             }
         }
 
+        // when get RAW10 size is null, disable the KEY_SAVERAW
+        int cameraId = mSettingsManager.getCurrentCameraId();
+        Size[] rawSize = mSettingsManager.getSupportedOutputSize(cameraId,
+                ImageFormat.RAW10);
+        if (rawSize == null) {
+            Preference p = findPreference(SettingsManager.KEY_SAVERAW);
+            p.setEnabled(false);
+        }
+
         try {
             String versionName = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
             int index = versionName.indexOf(' ');
@@ -678,14 +744,6 @@ public class SettingsActivity extends PreferenceActivity {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
-    }
-
-    private void updateStatsVisualizerPreference() {
-        ListPreference pref = (ListPreference)findPreference(SettingsManager.KEY_STATS_VISUALIZER_VALUE);
-        if (pref == null) {
-            return;
-        }
-        pref.setEnabled(true);
     }
 
     private void updateVideoHDRPreference() {
@@ -732,6 +790,26 @@ public class SettingsActivity extends PreferenceActivity {
                     idx = 0;
                 }
                 pref.setValueIndex(idx);
+                mSettingsManager.setValueIndex(key, idx);
+            }
+        }
+    }
+
+    private void updateMultiPreference(String key) {
+        MultiSelectListPreference pref = (MultiSelectListPreference) findPreference(key);
+        if (pref != null) {
+            if (mSettingsManager.getEntries(key) != null) {
+                pref.setEntries(mSettingsManager.getEntries(key));
+                pref.setEntryValues(mSettingsManager.getEntryValues(key));
+                String values = mSettingsManager.getValue(key);
+                if (values != null) {
+                    Set<String> valueSet = new HashSet<String>();
+                    String[] splitValues = values.split(";");
+                    for (String str : splitValues) {
+                        valueSet.add(str);
+                    }
+                    pref.setValues(valueSet);
+                }
             }
         }
     }

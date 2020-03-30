@@ -1035,6 +1035,9 @@ public class CaptureModule implements CameraModule, PhotoController,
             }
             case STATE_WAITING_AF_LOCK: {
                 Log.d(TAG, "STATE_WAITING_AF_LOCK id: " + id + " afState:" + afState + " aeState:" + aeState);
+                if (afState == null) {
+                    break;
+                }
 
                 // AF_PASSIVE is added for continous auto focus mode
                 if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||

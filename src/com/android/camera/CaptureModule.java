@@ -5140,6 +5140,12 @@ public class CaptureModule implements CameraModule, PhotoController,
             return;
         }
         mSettingsManager.setValue(key, value);
+        if(mCurrentSceneMode.mode == CameraMode.PRO_MODE) {
+            if (key.equals(SettingsManager.KEY_FOCUS_DISTANCE)) {
+                mSettingsManager.setProModeSliderValueForAutTest(key, value);
+            }
+            mUI.updateProUIForTest(key, value);
+        }
     }
 
     @Override

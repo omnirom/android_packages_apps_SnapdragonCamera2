@@ -1656,6 +1656,10 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mActivity.setSystemBarsVisibility(false);
     }
 
+    public void updateProUIForTest(String key, String value) {
+        mCameraControls.updateProUIForTest(key, value);
+    }
+
     public void startDeepPortraitMode(Size preview) {
         mSurfaceView.setVisibility(View.GONE);
         mSurfaceViewMono.setVisibility(View.GONE);

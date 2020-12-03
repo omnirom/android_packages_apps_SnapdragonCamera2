@@ -6057,13 +6057,8 @@ public class CaptureModule implements CameraModule, PhotoController,
         if (!mIsRecordingVideo && !mIsPreviewingVideo) return;
         applyVideoFlash(mVideoRecordRequestBuilder, id);
         applyVideoFlash(mVideoPreviewRequestBuilder, id);
-        CaptureRequest captureRequest = null;
         try {
-            if (mMediaRecorderPausing) {
-                captureRequest = mVideoPreviewRequestBuilder.build();
-            } else {
-                captureRequest = mVideoRecordRequestBuilder.build();
-            }
+            CaptureRequest captureRequest = mVideoRecordRequestBuilder.build();
             if (mCurrentSession instanceof CameraConstrainedHighSpeedCaptureSession) {
                 CameraConstrainedHighSpeedCaptureSession session =
                         (CameraConstrainedHighSpeedCaptureSession) mCurrentSession;

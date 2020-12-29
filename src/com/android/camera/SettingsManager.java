@@ -941,6 +941,22 @@ public class SettingsManager implements ListMenu.SettingsListener {
         return result;
     }
 
+    public void setProModeSliderValueForAutTest(String key, String value) {
+        float valueF = 1.0f;
+        try {
+            valueF = Float.parseFloat(value);
+        } catch(NumberFormatException e) {
+            Log.w(TAG, "setProModeSliderValueForAutTest type incorrect value ");
+        }
+        String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
+                getCurrentPrepNameKey());
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(prefName,
+                Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putFloat(key, valueF);
+        editor.commit();
+    }
+
     public float getProModeSliderValue(String key, float defaultValue) {
         String prefName = ComboPreferences.getLocalSharedPreferencesName(mContext,
                 getCurrentPrepNameKey());

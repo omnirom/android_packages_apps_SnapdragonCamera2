@@ -36,8 +36,9 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.android.camera.CaptureModule;
-import com.android.camera.Storage;
 import com.android.camera.imageprocessor.filter.BeautificationFilter;
+import com.android.camera.SettingsManager;
+import com.android.camera.Storage;
 
 import org.codeaurora.snapcam.R;
 
@@ -446,6 +447,24 @@ public class OneUICameraControls extends RotatableLayout {
                 v.setVisibility(View.VISIBLE);
         }
         mVisible = true;
+    }
+
+    public void updateProUIForTest(String key, String value) {
+        resetProModeIcons();
+        int mode = mProMode.getMode();
+        if (key.equals(SettingsManager.KEY_FOCUS_DISTANCE)) {
+            mManualText.setSelected(true);
+            mProMode.setMode(ProMode.MANUAL_MODE);
+        } else if (key.equals(SettingsManager.KEY_WHITE_BALANCE)) {
+            mWhiteBalanceText.setSelected(true);
+            mProMode.setMode(ProMode.WHITE_BALANCE_MODE);
+        } else if (key.equals(SettingsManager.KEY_EXPOSURE)) {
+            mExposureText.setSelected(true);
+            mProMode.setMode(ProMode.EXPOSURE_MODE);
+        } else if (key.equals(SettingsManager.KEY_ISO)) {
+            mIsoText.setSelected(true);
+            mProMode.setMode(ProMode.ISO_MODE);
+        }
     }
 
     public void setVideoMode(boolean videoMode) {

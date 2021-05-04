@@ -35,6 +35,7 @@ import android.util.Log;
 
 public class VendorTagUtil {
     private static final String TAG = "VendorTagUtil";
+    private final static boolean DEBUG = false;
 
     private static CaptureRequest.Key<Integer> CdsModeKey =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.CDS.cds_mode",
@@ -82,11 +83,13 @@ public class VendorTagUtil {
             builder.get(key);
         }catch(IllegalArgumentException exception){
             supported = false;
-            Log.d(TAG, "vendor tag " + key.getName() + " is not supported");
-            exception.printStackTrace();
+            if (DEBUG)  {
+                Log.d(TAG, "vendor tag " + key.getName() + " is not supported");
+                exception.printStackTrace();
+            }
         }
         if ( supported ) {
-            Log.d(TAG, "vendor tag " + key.getName() + " is supported");
+            if (DEBUG) Log.d(TAG, "vendor tag " + key.getName() + " is supported");
         }
         return supported;
     }

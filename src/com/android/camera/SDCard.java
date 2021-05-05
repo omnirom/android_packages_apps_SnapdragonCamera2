@@ -59,13 +59,6 @@ public class SDCard {
         return false;
     }
 
-    public String getRoot() {
-        if (mVolume == null) {
-            return null;
-        }
-        return mVolume.getPath();
-    }
-
     public String getDirectory() {
         if (mVolume == null) {
             return null;
